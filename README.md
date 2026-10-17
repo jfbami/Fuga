@@ -34,3 +34,13 @@ If the project won't open on your Xcode, regenerate it with [XcodeGen](https://g
 - `distanceMeters`: remaining distance along the route. Under 1.5 m it shows "Exit".
 
 Replace `CompassDemo` with the router's output once localization and A* are in.
+
+## Web preview (for phones without Xcode)
+
+`web-preview/index.html` is a browser copy of the arrow screen. Deploy it on Vercel so everyone can try it on their phone:
+
+1. On vercel.com, **Add New → Project**, import `jfbami/Fuga`, and pick the `ui/exit-arrow` branch (or whichever branch has `web-preview/`).
+2. Set **Root Directory** to `web-preview`, Framework Preset **Other**, no build command.
+3. Deploy, then open the link on your phone and tap **Use compass** (iPhone asks for motion access). Face a direction, tap **Exit is this way**, and turn around.
+
+Without the compass, drag left or right anywhere on the screen to turn.

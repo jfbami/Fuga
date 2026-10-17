@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#292929">
+<title>Fuga Arrow</title>
+<style>
+  /* Layout: one phone screen. Camera placeholder fills it; floor label top-left, demo controls top-right, arrow puck bottom-center. Single dark look, like the app. */
+  :root {
+    --bg-top: #292929;
+    --bg-bottom: #0f0f0f;
+    --ink: #ffffff;
+    --ink-dim: rgba(255, 255, 255, 0.55);
+    --puck: rgba(72, 72, 74, 0.78);
+    --go: #34c759;
+    --chip: rgba(255, 255, 255, 0.12);
+    --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; margin: 0; }
+  [hidden] { display: none !important; }
+  body {
+    background: linear-gradient(var(--bg-top), var(--bg-bottom));
+    background-color: var(--bg-bottom);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    overflow: hidden;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .screen {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    padding-block: 12px 20px;
+    box-sizing: border-box;
+  }
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.04em; color: var(--ink-dim); }
+  .floor { font-family: var(--font-display); font-size: 28px; font-weight: 700; margin-top: 2px; white-space: nowrap; }
+  .controls { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .row { display: flex; gap: 6px; align-items: center; }
+  button {
+    font: 600 14px/1 var(--font-ui);
+    color: var(--ink);
+    background: var(--chip);
+    border: 0;
+    border-radius: 999px;
+    padding: 9px 13px;
+    cursor: pointer;
+  }
+  button.primary { background: var(--go); }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  button[disabled] { opacity: 0.4; cursor: default; }
+  .step { min-width: 36px; padding-inline: 0; }
+  .meters { font-size: 14px; font-variant-numeric: tabular-nums; min-width: 40px; text-align: center; }
+  .hint { font-size: 12px; color: var(--ink-dim); text-align: right; max-width: 210px; }
+
+  .stage { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 12px; }
+  .puck { width: 168px; height: 168px; max-width: 100%; filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35)); }
+  .puck circle.base { fill: var(--puck); transition: fill 0.25s ease-in-out; }
+  .puck.aligned circle.base { fill: var(--go); }
+  .distance { text-align: center; text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
+  .distance .num { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+  .distance .unit { color: rgba(255, 255, 255, 0.5); }
+  .distance .dir { font-family: var(--font-display); font-size: 28px; }
+  @media (prefers-reduced-motion: reduce) { .puck circle.base { transition: none; } }
+</style>
+</head>
+<body>
+
+<main class="screen" id="screen">
+  <header class="top">
+    <div>
+      <div class="eyebrow">FINDING EXIT</div>
+      <div class="floor">2nd Floor</div>
+    </div>
+    <div class="controls">
+      <div class="row">
+        <button id="compassBtn" type="button">Use compass</button>
+        <button id="aheadBtn" type="button" class="primary" hidden>Exit is this way</button>
+      </div>
+      <div class="row">
+        <button id="minus" type="button" class="step" aria-label="Closer">−</button>
+        <span class="meters" id="metersOut">4 m</span>
+        <button id="plus" type="button" class="step" aria-label="Farther">+</button>
+      </div>
+      <div class="hint" id="hint">Demo is sweeping. Drag anywhere to turn.</div>
+    </div>
+  </header>
+
+  <section class="stage" aria-live="polite">
+    <svg class="puck" id="puck" viewBox="-84 -84 168 168" role="img" aria-label="Exit direction">
+      <circle class="base" r="84"></circle>
+      <g id="glyph" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path id="arrowPath"></path>
+        <circle id="dot" fill="#fff" stroke="none"></circle>
+      </g>
+    </svg>
+    <div class="distance">
+      <div class="num" id="numOut">13 <span class="unit">ft</span></div>
+      <div class="dir" id="dirOut">ahead</div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // Same proportions as ExitArrowView.swift (size = 168).
+  const SIZE = 168, TOL = 20;
+  const lw = SIZE * 0.095, w = SIZE * 0.40, h = SIZE * 0.52, off = SIZE * 0.04;
+  const a = 42 * Math.PI / 180;
+  const head = Math.min(h * 0.5, (w / 2) / Math.sin(a));
+  const dx = head * Math.sin(a), dy = head * Math.cos(a);
+  const tipY = -h / 2 + off, tailY = h / 2 + off;
+  const path = document.getElementById('arrowPath');
+  path.setAttribute('d', `M0 ${tailY} L0 ${tipY} M${-dx} ${tipY + dy} L0 ${tipY} L${dx} ${tipY + dy}`);
+  path.setAttribute('stroke-width', lw);
+  const dot = document.getElementById('dot');
+  dot.setAttribute('cy', -SIZE * 0.40);
+  dot.setAttribute('r', SIZE * 0.0375);
+
+  const glyph = document.getElementById('glyph');
+  const puck = document.getElementById('puck');
+  const numOut = document.getElementById('numOut');
+  const dirOut = document.getElementById('dirOut');
+  const metersOut = document.getElementById('metersOut');
+  const hint = document.getElementById('hint');
+  const compassBtn = document.getElementById('compassBtn');
+  const aheadBtn = document.getElementById('aheadBtn');
+
+  const usesFeet = /-US$|^en$/i.test(navigator.language || 'en-US');
+  const norm = d => { d = d % 360; if (d > 180) d -= 360; if (d <= -180) d += 360; return d; };
+
+  const state = { mode: 'sweep', heading: 0, target: 0, distance: 4, t: 0 };
+  let shown = 0, vel = 0, wasAligned = null, last = performance.now();
+
+  function relative() { return norm(state.target - state.heading); }
+
+  function direction(rel) {
+    const m = Math.abs(rel);
+    if (m <= TOL) return 'ahead';
+    if (m >= 135) return 'behind you';
+    return rel > 0 ? 'to your right' : 'to your left';
+  }
+
+  function renderText(rel) {
+    const d = state.distance;
+    metersOut.textContent = `${Math.round(d)} m`;
+    if (d < 1.5) {
+      numOut.textContent = 'Exit';
+      dirOut.textContent = 'here';
+      puck.setAttribute('aria-label', "You've reached the exit");
+      return;
+    }
+    const value = usesFeet ? Math.round(d * 3.28084) : Math.round(d);
+    const unit = usesFeet ? 'ft' : 'm';
+    numOut.innerHTML = `${value} <span class="unit">${unit}</span>`;
+    dirOut.textContent = direction(rel);
+    puck.setAttribute('aria-label', `Exit ${value} ${usesFeet ? 'feet' : 'meters'} ${direction(rel)}`);
+  }
+
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function frame(now) {
+    const dt = Math.min(0.05, (now - last) / 1000);
+    last = now;
+    if (state.mode === 'sweep') {
+      state.t += dt;
+      state.heading = 110 * Math.sin(state.t * 0.6);
+    }
+    const rel = relative();
+    // Spring toward the shortest-path goal (stiffness 170, damping 22), like the SwiftUI version.
+    const goal = shown + norm(rel - shown);
+    if (reduceMotion) { shown = goal; vel = 0; }
+    else {
+      vel += (170 * (goal - shown) - 22 * vel) * dt;
+      shown += vel * dt;
+    }
+    glyph.setAttribute('transform', `rotate(${shown})`);
+
+    const aligned = Math.abs(rel) <= TOL;
+    if (aligned !== wasAligned) {
+      puck.classList.toggle('aligned', aligned);
+      if (aligned && wasAligned === false && navigator.vibrate) navigator.vibrate(30);
+      wasAligned = aligned;
+    }
+    renderText(rel);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+
+  // Drag anywhere (outside the buttons) to turn.
+  let dragX = null;
+  document.getElementById('screen').addEventListener('pointerdown', e => {
+    if (e.target.closest('button')) return;
+    dragX = e.clientX;
+    if (state.mode === 'sweep') {
+      state.mode = 'drag';
+      hint.textContent = 'Drag left or right to turn.';
+    }
+  });
+  window.addEventListener('pointermove', e => {
+    if (dragX === null || state.mode !== 'drag') return;
+    state.heading += (e.clientX - dragX) * 0.5;
+    dragX = e.clientX;
+  });
+  window.addEventListener('pointerup', () => { dragX = null; });
+  window.addEventListener('pointercancel', () => { dragX = null; });
+
+  document.getElementById('minus').addEventListener('click', () => { state.distance = Math.max(0, state.distance - 1); });
+  document.getElementById('plus').addEventListener('click', () => { state.distance = Math.min(60, state.distance + 1); });
+
+  // Real compass: works when this page is opened on its own (e.g. hosted on Vercel), not inside an embedded viewer.
+  function onOrientation(e) {
+    let hd = null;
+    if (typeof e.webkitCompassHeading === 'number') hd = e.webkitCompassHeading;
+    else if (e.absolute && typeof e.alpha === 'number') hd = 360 - e.alpha;
+    if (hd === null) return;
+    if (state.mode !== 'compass') {
+      state.mode = 'compass';
+      state.target = hd;
+      aheadBtn.hidden = false;
+      compassBtn.hidden = true;
+      hint.textContent = 'Compass on. Face the exit and tap "Exit is this way", then turn around.';
+    }
+    state.heading = hd;
+  }
+
+  compassBtn.addEventListener('click', async () => {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        const res = await DeviceOrientationEvent.requestPermission();
+        if (res !== 'granted') throw new Error('denied');
+      }
+      window.addEventListener('deviceorientationabsolute', onOrientation);
+      window.addEventListener('deviceorientation', onOrientation);
+      hint.textContent = 'Waiting for the compass…';
+      setTimeout(() => {
+        if (state.mode !== 'compass') {
+          hint.textContent = "The compass isn't available in this view. Drag to turn instead, or open the Vercel version on your phone.";
+          if (state.mode === 'sweep') state.mode = 'drag';
+        }
+      }, 1500);
+    } catch (err) {
+      hint.textContent = "Compass access was blocked here. Drag to turn instead, or open the Vercel version on your phone.";
+      if (state.mode === 'sweep') state.mode = 'drag';
+    }
+  });
+
+  aheadBtn.addEventListener('click', () => { state.target = state.heading; });
+})();
+</script>
+
+</body>
+</html>
