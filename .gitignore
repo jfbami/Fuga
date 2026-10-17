@@ -18,3 +18,11 @@ build/
 
 # Floor plans from UW Space Viewer (NetID-only; don't publish)
 data/**/*.pdf
+
+# Generated from UW Space Viewer plans (NetID-only). Rebuild locally with tools/mapping/build_floor.py.
+data/**/floor.json
+data/**/grid.png
+
+# Python
+__pycache__/
+*.pyc
