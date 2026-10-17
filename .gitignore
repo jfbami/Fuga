@@ -1,0 +1,20 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# macOS
+.DS_Store
+
+# Secrets
+.env
+*.env
+
+# Floor plans from UW Space Viewer (NetID-only; don't publish)
+data/**/*.pdf
