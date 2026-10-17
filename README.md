@@ -1,8 +1,8 @@
 # Fuga
 
-**When you can't see the way out, Fuga can.**
+**Indoor directions, room to room.**
 
-Fuga guides you to the nearest exit of a building you don't know, even in smoke and without a connection. Each building is scanned once with a LiDAR iPhone; after that, any iPhone can find its position from the signs around it and point the way out.
+Fuga guides you through a building you don't know: pick a room, and the phone points the way with a Find My–style arrow, spoken turns and vibration. It's built for blind and low-vision people, new students and visitors. Each building is scanned once with a LiDAR iPhone and lined up with UW's floor plans; after that, any iPhone can be guided.
 
 Built at DubHacks '26.
 
@@ -17,23 +17,30 @@ Adding files: the `Fuga/` folder is synced with the project, so new Swift files 
 
 If the project won't open on your Xcode, regenerate it with [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen && xcodegen`.
 
-## What's here so far
+## Try it: elevator to 430 in Mary Gates Hall
+
+1. Build to your iPhone (iOS 17+, any model with ARKit; LiDAR not needed). Allow camera access.
+2. Take the elevator to the **4th floor of Mary Gates Hall**.
+3. Pick **430 Computer Classroom** (or **416 iLounge**).
+4. Step out of the elevator and **face straight down the hallway**, phone upright, then tap **Start**.
+5. Walk. The arrow points along the route and turns green when you face the right way. Turns are spoken 4 m ahead and again at the corner, with **2 vibration pulses for left and 3 for right**. On arrival it says which side the door is on.
+
+The small map (top right) shows the route and your blue dot. If the dot drifts off the line, walk back to the elevator and tap **I'm at the elevator** to restart.
+
+How it stays on track: ARKit follows every step from the elevator. When you walk straight along a hallway, the app compares that with the route and corrects its heading, so being up to about 25° off when you tap Start is fine (tested by replaying the LiDAR walk with `tools/mapping/replay_navigation.py`).
+
+## What's in the app
 
 | Path | What it is |
 | --- | --- |
-| `Fuga/Guidance/ExitArrowView.swift` | The bottom-center arrow, styled after Find My's precision-finding arrow. Takes a bearing relative to the phone and a distance. Turns green with a haptic tap when you face the exit |
-| `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale, plus the spoken description |
-| `Fuga/Demo/CompassDemo.swift` | Temporary driver: on a phone, tap **Exit is this way**, then turn around and the arrow keeps pointing there. In the Simulator it sweeps automatically |
-| `Fuga/ContentView.swift` | Main screen: camera placeholder, floor label, arrow |
-
-### Connecting real routing
-
-`ExitArrowView(relativeBearing:distanceMeters:)` is the whole interface:
-
-- `relativeBearing`: degrees from where the phone points to the next point on the route. `0` ahead, `+90` right, `-90` left, `±180` behind. Point at the next turn, not straight at the exit through walls.
-- `distanceMeters`: remaining distance along the route. Under 1.5 m it shows "Exit".
-
-Replace `CompassDemo` with the router's output once localization and A* are in.
+| `Fuga/Guidance/ExitArrowView.swift` | Find My–style arrow: bearing relative to the phone + distance. Turns green with a haptic tap when you face the right way |
+| `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale |
+| `Fuga/Navigation/RouteNavigator.swift` | ARKit tracking, start calibration, hallway heading correction, spoken turns, vibration, arrival |
+| `Fuga/Navigation/RouteTracker.swift` | Route geometry: progress along the route, look-ahead target, turns (no ARKit, easy to test) |
+| `Fuga/Navigation/Route.swift` | Route model and the MGH 4th-floor destinations + start point |
+| `Fuga/Navigation/MiniMap.swift`, `ARCameraView.swift` | Debug map and camera background |
+| `Fuga/Routes/*.json` | Routes made by `tools/mapping/route.py` |
+| `tools/mapping/` | Pipeline: floor plan PDF + LiDAR walk -> map, landmarks, routes. See its README |
 
 ## Web preview (for phones without Xcode)
 

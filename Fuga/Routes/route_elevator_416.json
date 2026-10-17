@@ -1,0 +1,79 @@
+{
+  "from": {
+    "id": "400W",
+    "name": "400W"
+  },
+  "to": {
+    "id": "416",
+    "name": "416 iLounge"
+  },
+  "lengthMeters": 18.6,
+  "points": [
+    {
+      "x": 16.27,
+      "y": 36.67
+    },
+    {
+      "x": 16.27,
+      "y": 34.88
+    },
+    {
+      "x": 19.57,
+      "y": 32.48
+    },
+    {
+      "x": 19.88,
+      "y": 21.22
+    },
+    {
+      "x": 20.93,
+      "y": 20.18
+    }
+  ],
+  "steps": [
+    {
+      "action": "walk",
+      "meters": 1.8,
+      "say": "Walk 2 meters"
+    },
+    {
+      "action": "turn",
+      "direction": "left",
+      "degrees": 54,
+      "say": "Turn slightly left"
+    },
+    {
+      "action": "walk",
+      "meters": 4.1,
+      "say": "Walk 4 meters"
+    },
+    {
+      "action": "turn",
+      "direction": "right",
+      "degrees": 52,
+      "say": "Turn slightly right"
+    },
+    {
+      "action": "walk",
+      "meters": 11.3,
+      "say": "Walk 11 meters"
+    },
+    {
+      "action": "turn",
+      "direction": "left",
+      "degrees": 43,
+      "say": "Turn slightly left"
+    },
+    {
+      "action": "walk",
+      "meters": 1.5,
+      "say": "Walk 2 meters"
+    },
+    {
+      "action": "arrive",
+      "name": "416 iLounge",
+      "side": "left",
+      "say": "416 iLounge is on your left"
+    }
+  ]
+}

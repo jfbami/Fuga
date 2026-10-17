@@ -29,17 +29,17 @@ struct DistanceLabel: View {
 
     // MARK: - Formatting
 
-    /// Under this distance we stop counting and just say the exit is here.
+    /// Under this distance we stop counting and just say you're here.
     static let arrivalThresholdMeters: Double = 1.5
 
     static var usesFeet: Bool {
         Locale.current.measurementSystem == .us
     }
 
-    /// Splits a distance into the big number and its unit, e.g. ("13", "ft"). Arrival returns ("Exit", nil).
+    /// Splits a distance into the big number and its unit, e.g. ("13", "ft"). Arrival returns ("Here", nil).
     static func distanceParts(meters: Double) -> (value: String, unit: String?) {
         if meters < arrivalThresholdMeters {
-            return ("Exit", nil)
+            return ("Here", nil)
         }
         if usesFeet {
             let feet = Int((meters * 3.28084).rounded())
@@ -61,8 +61,8 @@ struct DistanceLabel: View {
     /// What VoiceOver (and later, the voice guidance) says.
     static func spokenDescription(meters: Double, relativeBearing: Double) -> String {
         let parts = distanceParts(meters: meters)
-        guard let unit = parts.unit else { return "You've reached the exit" }
+        guard let unit = parts.unit else { return "You've arrived" }
         let spokenUnit = unit == "ft" ? "feet" : "meters"
-        return "Exit \(parts.value) \(spokenUnit) \(direction(for: relativeBearing))"
+        return "\(parts.value) \(spokenUnit) to go, \(direction(for: relativeBearing))"
     }
 }

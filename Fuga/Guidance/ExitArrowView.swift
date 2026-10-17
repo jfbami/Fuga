@@ -2,7 +2,7 @@ import SwiftUI
 
 /// The bottom-center guidance arrow, styled after Apple Find My's precision-finding arrow:
 /// a thick white arrow with rounded ends, a small dot marking the target, a puck that turns
-/// green when you're facing the exit, and the distance in large type underneath.
+/// green when you're facing the way to go, and the distance in large type underneath.
 ///
 /// Feed it a bearing *relative to where the phone is pointing*:
 /// 0 = straight ahead, +90 = to the right, -90 = to the left, ±180 = behind.
