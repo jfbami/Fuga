@@ -396,3 +396,10 @@ All evidence files above are also embedded in the master. Use `MGH_Master_tools.
 ### 2026-10-18 — Decision: phone capture test before route bridge
 
 - D031 (user decision): do not connect the draft scan-frame route (D030) to the app's arrow/voice/haptics yet. Wait for the teammate's physical-iPhone capture test (private calibrated export with actual standing location and facing) first. No app bridge code was written; guidanceEnabled stays false. Next app-side work after that test: scan pose -> draft route -> ARKit/arrow bridge behind the guidance switch, with the planner's camera-axis convention declared.
+
+
+### 2026-10-18 — Reviewed teammate push b538587 (capture test unaffected)
+
+- User asked whether newly pushed work still supports the planned capture test. Only codex/juno-native-fix moved (6a8c60f, b538587 by Hasan Wazir); nav/route-guidance and mgh-localization were unchanged at ccde3b9 / 1410f46. Not merged into either.
+- QuickLookModel, QuickLookCapture and Config/Info.plist are byte-identical to ccde3b9; QuickLookView only gains an optional Developer navigation test section. Automatic look, Look again, capture-only export and Share remain. GitHub Actions on b538587 passed (Swift logic tests incl. a DEBUG variant, Python tests, unsigned iOS Simulator xcodebuild). No physical iPhone result yet.
+- New in that branch: NavigationAccess lets a DEBUG build start the old plan-meter graph from a manually chosen landmark (labelled MANUAL TEST · UNVERIFIED MAP); release builds stay blocked and guidanceEnabled remains false. Xcode device runs are normally Debug, so testers will see it. It is a developer route demo on unregistered external coordinates, not the D028 primary flow and not verified navigation; its graph still lacks 440. Also removed FindMyHaptics from the navigator, setAllowHapticsAndSystemSoundsDuringRecording, and Apple-voice narration. No change made by us.
