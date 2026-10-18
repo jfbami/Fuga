@@ -1,0 +1,27 @@
+{
+  "scans": [
+    {
+      "scan_id": "5a6579fe23",
+      "user_floor_context": 3,
+      "frame_count": 9885,
+      "duration_seconds": 173.11018941600196,
+      "original_sha256": "b5e8d1374299c1bbd09628e6cf64833e885f47c9d79440cb0dc9b72f344787b9"
+    },
+    {
+      "scan_id": "0162f41946",
+      "user_floor_context": 2,
+      "frame_count": 16794,
+      "duration_seconds": 293.36837375000323,
+      "original_sha256": "777f92305b5a5406169426376e86c26394566e93f71d76f39000891e556e8661"
+    }
+  ],
+  "new_floor_plans_received": [
+    2,
+    3
+  ],
+  "scan_frames_separate": true,
+  "routing_enabled": false,
+  "floor2_timestamp_anomaly_boundary_excluded": true,
+  "geometry_merge_verified": false,
+  "independent_phone_validation_passed": false
+}

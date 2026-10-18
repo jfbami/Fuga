@@ -1,0 +1,17 @@
+{
+  "revision": 9,
+  "verification": {
+    "integrity_check": "ok",
+    "foreign_key_errors": [],
+    "blob_checksum_errors": [],
+    "blobs_verified": 1551,
+    "embedded_bytes_verified": 4490404103,
+    "passed": true
+  },
+  "scan_count": 5,
+  "room_number_labels": 230,
+  "draft_plan_doorways": 6,
+  "measured_sign_candidates": 3,
+  "verified_3d_doorways": 0,
+  "private_source_and_geometry_files_included": false
+}

@@ -6,6 +6,8 @@ Last updated: 2026-10-17. This is a working summary of the conversation and the 
 
 **Current evaluation update, 2026-10-17:** v3/A 2/20 accepted (2 within internal tolerance, 0 >2 m); v3/B 2/20 accepted (2 within internal tolerance, 0 >2 m); v4/B 5/20 accepted (5 within internal tolerance, 0 >2 m). See `localization/evaluation_v3_v4_comparison/EVALUATION_REPORT.md`. This supersedes the historical 'not yet evaluated' state below; no independent-phone or routing pass.
 
+**New coverage update, 2026-10-17:** received and reconstructed separate floor-2 and floor-3 captures plus their private plans. Five scan originals now preserved; MGH floors 2/3/4 remain partial and unregistered. See `ingest_floor2_floor3_20261017/INGEST_REPORT.md`.
+
 ## 1. Goal and current scope
 
 Build a growing digital representation of Mary Gates Hall (MGH), University of Washington, that eventually supports ordinary-phone indoor wayfinding. A user should be able to ask, for example, "Take me to room 416," have the app determine their position and orientation, and receive directions to a reviewed entrance.
@@ -33,6 +35,8 @@ Before this documentation/localization milestone, revision 4 contained three sca
 | `e1a70b754b` | `e1a70b754b.zip` | Building and floor unconfirmed | About 32.4 s / 33.1 m | Original and prototype preserved; unassigned, not merged into MGH |
 | `b43779c138` | `iLounge.zip` | MGH floor 4; draft context 400W -> 400J -> 400M | About 105.9 s / 56.4 m | Reconstructed; draft plan registration and labels; camera localization unreliable |
 | `b9dca4993d` | `MGH Staircase.zip` | STAIR 1 ascent, floor 3 -> floor 4; then fourth-floor lobby/corridors | About 254.6 s / 161.6 m | Reconstructed in its own frame; not registered to iLounge |
+| `5a6579fe23` | `3rd floor.zip` | User-identified MGH floor 3, corridors/landings | About 173.1 s / 173.2 m | Separate indexed prototype; plan registration pending |
+| `0162f41946` | `2nf floor mgh + elevator.zip` | User-identified MGH floor 2, corridors/atrium/elevator context | About 293.4 s / 232.6 m | Separate indexed prototype; timestamp boundary excluded; no elevator route verified |
 
 Recorded path lengths include turns and backtracking. They are not lengths of unique corridor coverage or independently surveyed dimensions.
 
@@ -151,6 +155,9 @@ Independent ordinary-phone photos and reviewed entrance anchors are still needed
 | D017 | Complete predeclared v3 A/B and low-rotation v4 B without changing thresholds or retrieval; reserve fresh data for later variants | User continuation request and implementation choice; B consumed by these two variants |
 | D018 | Feed the existing app arrow/path/proximity-buzz flow with camera-to-map localization; keep existing UI work | User clarification; newer navigation code is on nav/route-guidance, separate map/frame |
 | D019 | Preserve the two iPhone 14 photos as independent queries; gate estimated calibration and keep two-reference checks | User identified 430/440; implementation protocol fixed before matching; later follow-ups are diagnostics |
+| D020 | Add floor-2/3 scan ZIPs and plans to the sole master, preserving originals and separate frames | User upload/continuation; plans and new raw data remain private |
+| D021 | Retain floor-2 global association failure; verify both timestamp segments and exclude uncertain boundary ordinals | Implementation evidence; no pose-time interpolation, scale change or threshold relaxation |
+| D022 | Catalog known room identities and keep plan labels, doorway candidates and measured sign landmarks separate | User asked for room labels/anchor points; draft placement only, no route activation |
 
 Future decisions are not pre-approved merely because they appear in the roadmap. Add new IDs when an actual decision is made, identify whether it came from the user or an implementation choice, and record the consequences/evidence. Reversals should supersede earlier entries rather than erase them.
 
@@ -275,3 +282,22 @@ All evidence files above are also embedded in the master. Use `MGH_Master_tools.
 - Added `phone_localizer.py`, `serve_phone_localizer.py` and `PHONE_APP_INTERFACE.md` to provide the existing app a concrete image/intrinsics/timestamp-to-scan-pose interface. Six contract tests passed, plus a real model/image HTTP smoke test; its temporary server closed afterward. The arrow/app source was not replaced. No iOS build or live walk ran on this Windows host.
 - Inspected newer `nav/route-guidance` commit d7229ac. It has a separately saved ARWorldMap and plan-meter hallway graph without 440. Those coordinates and doorway assertions are unreviewed external working data relative to this archive, not an approved staircase-scan registration. No implicit merge/scale correction or routing enablement occurred.
 - User offered floor-2/3 plans and new scans; files not yet received at this entry. Preserve originals and add to the same archive when supplied. No whole-building rescan requested. Floor plans and new independent-photo originals stay private; public handoff contains code and text results.
+
+### 2026-10-17 — Added floor-2/3 plans and new scan captures
+
+- User supplied `3rd floor.zip` (`5a6579fe23`), `2nf floor mgh + elevator.zip` (`0162f41946`), and `MGH1197_02.pdf` / `MGH1197_03.pdf`. D020: preserve all four originals byte for byte in the existing master with checksums/provenance; no competing archive. Both ZIP CRCs and expected depth/confidence filename coverage passed.
+- Reconstructed both in their own coordinate frames with Open3D 0.19 and unchanged depth/TSDF settings. Colored fusion uses sequential RGB decoding and audited row association. Self-contained 3D viewers, static previews, frame logs, meshes, clouds and export checks are retained. Details/counts are in `ingest_floor2_floor3_20261017/INGEST_REPORT.md` and `ingest_summary.json`.
+- D021: floor 3 has exact +1 fingerprint agreement (498 gaps). Floor 2 failed the strict global validator: a video timestamp-duration anomaly near 260 s and ~62 ppm clock difference. Both sides separately have unique exact +1 gap fingerprints (654/134 gaps); RGB ordinals 14924-14932 are excluded around the boundary, dropping one reconstruction sample. No pose-time interpolation, geometry scale correction or localization acceptance change was applied. The old global visual-map validator remains unchanged; its failure/logs are preserved.
+- Floor 3 is no longer represented only by the earlier STAIR 1 landing; it now includes separate corridor coverage. Floor 2 has partial corridor/atrium/elevator context. Elevator views are observations, not a verified between-floor connection. Plan-to-scan alignment, shaft/stair IDs and actual entrance anchors remain pending. Earlier scan `e1a70b754b` stays building/floor unassigned.
+- Batch archive script `work/archive_mgh_floor23.py` embeds new originals/derivatives, these notes and structured current records transactionally. Its post-commit receipt `../MGH_Master_floor23_update.json` records the actual revision and full integrity/checksum verification. Existing originals/history remain unchanged; routing stays disabled, phone-localization limitations remain open.
+- Floor plans (including extracted contents/renders) and new scan originals/derivatives remain private. The earlier PR update was pushed at commit 61ec52a; any new public handoff update is restricted to code/text inventory and contains none of these new private source/geometry files.
+
+### 2026-10-17 — Cataloged room labels and draft anchors across floors 2/3/4
+
+- User asked to continue piecing the data together and label each known room for anchor creation (D022). Found the named full floor-4 PDF locally; preserved its provenance as an existing local project source, distinct from the two newly uploaded PDFs.
+- Extracted 305 unique plan labels: 230 room-number labels, 56 other plan-space labels, 14 stair labels and 5 elevator labels. Kept native page/label bounding boxes, exact source checksums and unknown room functions. Existing known names and scan/photo evidence for 416/420/430/440 remain linked. Plans and extracted coordinates remain private.
+- Created six distinct plan doorway candidates: 416 west, 420 east double doorway, 430 west/east and 440 west/east. The full plan shows multiple entrances for 430/440; the user's room-level photo location does not by itself identify which doorway. Other rooms are queued for doorway review rather than given guessed entrances.
+- Recorded depth-backed draft 3D sign landmarks for 416, 430 and 440 in the staircase scan frame using sequential ordinal +1 and unchanged confidence/range/edge filters. 420 failed confident-depth support and keeps a null 3D position. These are sign points, not door thresholds or physical room centres, and are not surveyed accuracy evidence.
+- Added private searchable room/anchor review, CSV/JSON catalog and source-marked plan/sign previews. Existing legacy 400A/400B room records retain pending classification. Verified 3D doorway anchors remain 0; scan-to-plan registration, corridor edges and routing remain disabled/pending.
+
+- Archive implementation diagnostic: initial floor-2/3 batch assembly raised a missing-association metadata error before commit and rolled back to revision 8 (three scans). Corrected the per-scan metadata join and stage one final payload per record key in the batch; retain the failed script/receipt. No partial original/annotation import was committed.

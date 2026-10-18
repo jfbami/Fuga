@@ -1,0 +1,20 @@
+{
+  "total_plan_labels": 305,
+  "counts": {
+    "room": 230,
+    "elevator_label": 5,
+    "plan_space": 56,
+    "stair_label": 14
+  },
+  "plan_floors": [
+    2,
+    3,
+    4
+  ],
+  "draft_doorway_candidates": 6,
+  "verified_3d_door_anchors": 0,
+  "room430_and_440_have_multiple_entrances": true,
+  "plan_geometry_and_coordinates_private": true,
+  "routing_enabled": false,
+  "measured_3d_sign_candidates": 3
+}

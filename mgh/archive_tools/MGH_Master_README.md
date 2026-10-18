@@ -6,8 +6,10 @@ The nearby `MGH_Master_tools.py` is a convenience command-line utility. A copy o
 
 ## Current scope
 
+- New floor-3 capture `5a6579fe23` and floor-2/elevator-context capture `0162f41946`: original ZIPs, indexed reconstruction prototypes and diagnostics. Private floor-2/3 PDFs are embedded under `references/floor_plans/`. MGH now has partial floor-2/3/4 coverage; all scan frames remain separate.
+
 - Mary Gates Hall, floor 4: iLounge scan `b43779c138`, with its original ZIP, reconstruction, floor-plan overlay, draft labels, length comparison, and localization experiments.
-- Staircase scan `b9dca4993d`: original ZIP, multi-level reconstruction, source views, and reviewed signs. It records a floor-3 to floor-4 ascent in physically signed STAIR 1, then overlapping and additional floor-4 corridor coverage. Floor 3 currently has only limited stair/landing coverage, not a floor reconstruction.
+- Staircase scan `b9dca4993d`: original ZIP, multi-level reconstruction, source views, and reviewed signs. It records a floor-3 to floor-4 ascent in physically signed STAIR 1, then overlapping and additional floor-4 corridor coverage. That recording has only limited floor-3 stair/landing coverage; a newer separate floor-3 corridor reconstruction is also archived.
 - The staircase recording remains in its own coordinate frame. Visual overlap with the iLounge lobby is evident, but initial automated registration candidates failed multi-view/depth consistency. No candidate is approved for merging geometry. The architectural plan's stair ID and actual landing doorway anchors still need review.
 - Earlier scan `e1a70b754b`: original data and reconstruction preserved, but building and floor remain **unassigned** until confirmed. It has not been merged into MGH geometry.
 - Draft room destinations: 416 iLounge, 420 Student Services, 430 Computer Classroom. Labels and approximate sign positions come from the supplied annotated plan; doorway anchors are not verified.
@@ -76,4 +78,4 @@ The organized working folder is `MGH_Project/`. Its `PROJECT_LOG.md` consolidate
 Use this archive as the canonical record in future MGH work. Existing loose files are preserved as working copies and exports. Synchronize any new annotation or derivative back into the master before reporting it as saved. The archive retains revision history, but it is still one physical file; a separate user-managed backup protects against loss of that file.
 
 
-Independent phone update: two iPhone 14 originals (430 and 440) are preserved as queries, not map references. 430 gives an exploratory EXIF-calibrated geometric hypothesis; 440 remains unresolved. The app-facing backend and frame/calibration contract are embedded under project/MGH_Project/localization/. Existing arrow/UI work is separate; no reviewed plan-to-staircase transform or verified 440 route is enabled. New floor-2/3 data has been offered but not received.
+Independent phone update: two iPhone 14 originals (430 and 440) are preserved as queries, not map references. 430 gives an exploratory EXIF-calibrated geometric hypothesis; 440 remains unresolved. The app-facing backend and frame/calibration contract are embedded under project/MGH_Project/localization/. Existing arrow/UI work is separate; no reviewed plan-to-staircase transform or verified 440 route is enabled. Floor-2/3 scan originals and plan PDFs have now been received and reconstructed in separate frames; see the embedded floor-2/3 ingest report. No new scan-to-plan registration or elevator route is verified.
