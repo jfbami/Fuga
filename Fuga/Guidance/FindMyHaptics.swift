@@ -20,10 +20,15 @@ final class FindMyHaptics {
     private var distance: Double = .infinity
     private var lastTap: TimeInterval = 0
     private var running = false
+    /// What the vibration hardware is doing, for the feedback test.
+    private(set) var status = "Ready"
 
     init() {
-        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else { return }
-        engine = try? CHHapticEngine()
+        guard CHHapticEngine.capabilitiesForHardware().supportsHaptics else {
+            status = "This iPhone reports no Core Haptics support (using basic taps)"
+            return
+        }
+        do { engine = try CHHapticEngine() } catch { status = "Haptic engine unavailable: \(error.localizedDescription)" }
         engine?.isAutoShutdownEnabled = false
         engine?.playsHapticsOnly = true
         engine?.resetHandler = { [weak self] in try? self?.engine?.start() }
@@ -33,7 +38,7 @@ final class FindMyHaptics {
     func start() {
         guard !running else { return }
         running = true
-        try? engine?.start()
+        do { try engine?.start() } catch { status = "Haptic engine didn't start: \(error.localizedDescription)" }
         fallback.prepare()
         lastTap = 0
         timer = Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { [weak self] _ in self?.tick() }

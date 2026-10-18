@@ -35,7 +35,6 @@ final class FeedbackTest: ObservableObject {
             } catch {}
             self.findMy.stop()
             self.running = false
-            self.step = ""
         }
     }
 
@@ -47,13 +46,15 @@ final class FeedbackTest: ObservableObject {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
 
-        step = "Spoken turn instruction (device voice)"
+        step = "iPhone voice (used for turns with distances and room names)"
         speech.speak(AVSpeechUtterance(string: "In 4 meters, turn left."))
         try await pause(2.5)
 
+        var voiceSource = ""
         for cue in [VoiceCue.ahead, .left, .right, .behind] {
-            step = "Direction cue: \(cue.text)"
+            step = "ElevenLabs cue: \(cue.text)"
             voice.preview(cue)
+            voiceSource = voice.status
             try await pause(2.2)
         }
 
@@ -72,7 +73,7 @@ final class FeedbackTest: ObservableObject {
         step = "Arrival burst"
         findMy.stop()
         findMy.arrived()
-        speech.speak(AVSpeechUtterance(string: "430 Computer Classroom is on your right."))
+        speech.speak(AVSpeechUtterance(string: "430 Computer Classroom is on your right."))  // iPhone voice: room names
         try await pause(3)
 
         step = "Off-course: light pulses (facing 45° or more away)"
@@ -82,7 +83,10 @@ final class FeedbackTest: ObservableObject {
         heavy.prepare()
         for _ in 0..<4 { heavy.impactOccurred(intensity: 1); try await pause(0.75) }
 
-        step = "Done"
-        try await pause(1)
+        let clips = voiceSource == "ElevenLabs voice"
+            ? "ElevenLabs clips played"
+            : "ElevenLabs clips did NOT play (\(voiceSource))"
+        step = "Done. \(clips). Vibration: \(findMy.status)."
+        try await pause(0.1)
     }
 }

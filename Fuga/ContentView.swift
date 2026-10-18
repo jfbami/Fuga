@@ -45,7 +45,10 @@ struct ContentView: View {
             case .navigating, .arrived: guidanceScreen
             }
         }
-        .onAppear { nav.runCamera() }
+        .onAppear {
+            nav.runCamera()
+            nav.playCue = { [weak voice] cue in voice?.preview(cue) }
+        }
         .onDisappear { nav.pauseCamera() }
         .sheet(isPresented: $showQuickLook) { QuickLookView(session: nav.session) }
         // Off-course nudges: light pulses at 45°+ away from the route, heavy at 100°+.
@@ -119,7 +122,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.bordered).tint(.white)
                 .accessibilityHint("Plays the spoken turns, direction cues and every vibration pattern")
-                if feedbackTest.running {
+                if !feedbackTest.step.isEmpty {
                     Text(feedbackTest.step)
                         .font(.footnote).foregroundStyle(.white.opacity(0.85))
                         .fixedSize(horizontal: false, vertical: true)
