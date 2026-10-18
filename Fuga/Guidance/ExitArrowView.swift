@@ -33,7 +33,7 @@ struct ExitArrowView: View {
             DistanceLabel(meters: distanceMeters, relativeBearing: relativeBearing)
         }
         .animation(.easeInOut(duration: 0.25), value: isAligned)
-        // Vibration is handled by FindMyHaptics (snap on green, taps that speed up as you get closer).
+        // Vibration is handled by AlignedHaptics + OffCourseHapticPlayer, driven from ContentView.runCues().
         .onAppear { displayedAngle = Self.normalized(relativeBearing) }
         .onChange(of: relativeBearing) { _, newBearing in
             let delta = Self.shortestDelta(from: displayedAngle, to: newBearing)

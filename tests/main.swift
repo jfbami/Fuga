@@ -62,6 +62,19 @@ expect(haptics.update(bearing: 100, distance: 4, now: 22) == nil, "Restart debou
 expect(haptics.update(bearing: 100, distance: 4, now: 22.75) == .strong, "Sustained deviation after noise")
 print("Two-strength off-course haptic checks passed")
 
+var onTarget = AlignedHaptics()
+expect(onTarget.update(aligned: false, distance: 10, now: 0) == nil, "Silent when not facing the route")
+expect(onTarget.update(aligned: true, distance: 10, now: 1) == .snap, "Snap when lining up")
+expect(onTarget.update(aligned: true, distance: 10, now: 1.25) == nil, "Wait for the tap interval")
+expect(onTarget.update(aligned: true, distance: 10, now: 1.75) == .tap(intensity: AlignedHaptics.intensity(for: 10)),
+       "Tap while facing the route")
+expect(onTarget.update(aligned: false, distance: 10, now: 2) == nil, "Stop when turning away")
+expect(onTarget.update(aligned: true, distance: 10, now: 2.25) == .snap, "Snap again after turning back")
+expect(onTarget.update(aligned: true, distance: .nan, now: 3) == nil, "Silent for invalid distance")
+expect(AlignedHaptics.interval(for: 2) < AlignedHaptics.interval(for: 20), "Taps speed up when closer")
+expect(AlignedHaptics.intensity(for: 2) > AlignedHaptics.intensity(for: 20), "Taps get stronger when closer")
+print("On-target haptic checks passed")
+
 expect(NavigationAccess.permitsStart(verified: true, manualTest: false), "Verified navigation allowed")
 expect(!NavigationAccess.permitsStart(verified: false, manualTest: false), "Unverified navigation requires opt-in")
 #if DEBUG

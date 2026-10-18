@@ -14,6 +14,8 @@ struct ContentView: View {
     @StateObject private var haptics: OffCourseHapticPlayer
     @State private var showManualTest = false
     @State private var offCourseHaptics = OffCourseHaptics()
+    /// Snap + taps while facing the right way (was FindMyHaptics, disconnected in 5ceb948).
+    @State private var alignedHaptics = AlignedHaptics()
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -64,10 +66,16 @@ struct ContentView: View {
             feedbackTest.stop()
             voice.stop()
             offCourseHaptics.reset()
+            alignedHaptics.reset()
             haptics.stop()
         }
         .onChange(of: showQuickLook) { _, shown in
             if shown { voice.stop(); haptics.stop() }
+        }
+        // Arrival burst. The navigator already publishes the phase, so RouteNavigator
+        // doesn't need to own any haptics (its old findMy.arrived() call was removed).
+        .onChange(of: nav.phase) { _, phase in
+            if phase == .arrived, scenePhase == .active { haptics.playArrival() }
         }
     }
 
@@ -76,6 +84,7 @@ struct ContentView: View {
     /// with a bundled Juno cue, so these never get an arrival distance.
     private func runCues() async {
         offCourseHaptics.reset()
+        alignedHaptics.reset()
         guard scenePhase == .active else {
             if nav.phase != .idle { nav.suspendGuidance("App paused. Recalibrate at a known doorway.") }
             feedbackTest.stop()
@@ -89,25 +98,37 @@ struct ContentView: View {
                 // The idle-screen feedback test owns the shared voice player.
                 // Silencing it every 250 ms would cut off its preview clips.
                 offCourseHaptics.reset()
+                alignedHaptics.reset()
             } else if nav.phase == .navigating, nav.trackingReady, nav.guidanceReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
                 // Don't talk over a spoken turn instruction.
                 // Turn announcements and direction reminders share one Juno player;
                 // update() waits while an announcement is playing.
                 voice.update(bearing: nav.relativeBearing, distance: nav.distanceRemaining)
-                if let strength = offCourseHaptics.update(bearing: nav.relativeBearing,
-                                                          distance: nav.distanceRemaining,
-                                                          now: ProcessInfo.processInfo.systemUptime) {
-                    haptics.play(strength)
+                let now = ProcessInfo.processInfo.systemUptime
+                // Update both every tick so their timers stay correct. Their angle ranges
+                // don't overlap (aligned until 28° off, nudges from 30°), so at most one fires.
+                let onTarget = alignedHaptics.update(aligned: nav.isAligned,
+                                                     distance: nav.distanceRemaining, now: now)
+                let nudge = offCourseHaptics.update(bearing: nav.relativeBearing,
+                                                    distance: nav.distanceRemaining, now: now)
+                if let onTarget {
+                    haptics.play(onTarget)
+                } else if let nudge {
+                    haptics.play(nudge)
                 }
             } else {
                 if nav.phase == .navigating { voice.silence() }
                 offCourseHaptics.reset()
-                if nav.phase != .idle { haptics.stop() }
+                alignedHaptics.reset()
+                // Not .arrived: stopping here used to be harmless, but it would now cut the
+                // arrival burst off mid-pattern. The engine stops when you tap End (phase → idle).
+                if nav.phase != .arrived { haptics.stop() }
             }
             do { try await Task.sleep(for: .milliseconds(250)) } catch { break }
         }
         voice.stop()
         offCourseHaptics.reset()
+        alignedHaptics.reset()
         haptics.stop()
     }
 

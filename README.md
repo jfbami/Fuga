@@ -32,8 +32,12 @@ iPhone, and use **Audio & vibration check** on the start screen:
 
 1. **Test Juno** must play the bundled Juno introduction and show `Juno · ElevenLabs`.
    A missing/unplayable test clip reports failure instead of silently using Apple speech.
-2. **Subtle vibration** sends a short low-intensity pulse; **Strong vibration** sends
-   a 0.3-second maximum-intensity pulse. Check the status text if neither can be felt.
+2. **Test voice & vibration** plays, in order: 3 subtle nudges, 3 strong nudges, the
+   on-target snap, taps speeding up (20 m → 2 m), the arrival burst, and finally one
+   plain UIKit tap that skips Core Haptics. Felt only the last one? Core Haptics is the
+   problem. Felt nothing? Check Settings › Accessibility › Touch › Vibration and
+   Settings › Sounds & Haptics. "Accepted by Core Haptics" means iOS took the request,
+   not that the motor moved; "iOS stopped the vibration engine (…)" gives the reason.
 3. Background the app to confirm playback stops. Repeat in airplane mode.
 
 Juno (`3T3dPoABJjGZZAI1eif7`) is enabled by default and now handles route events
@@ -64,6 +68,8 @@ Fuga is a prototype for indoor wayfinding with a Find My–style arrow, spoken t
 The new **Find my location** screen captures calibrated ARKit frames, accepts a spoken destination, and can query the development map matcher. It saves a private diagnostic to share for analysis. Walking guidance is held until map/doorway/path verification. See [the phone-test guide](mgh/ios/PHONE_TEST_GUIDE.md). Existing arrow, route rendering and haptic implementations are preserved.
 
 Built at DubHacks '26.
+
+See [APP_NOTES.md](APP_NOTES.md) for the app-side change log, known cleanup items, and context that doesn't fit this README.
 
 ## Project scope and current limitations
 
@@ -113,12 +119,15 @@ mode with generated clips. Also remove a clip to confirm a visible error and no 
 
 ### Off-course vibration
 
-The iPhone gives subtle, light pulses every 2 seconds when it points at least 45°
-away from the next waypoint. At 100° or more, it switches to maximum-intensity
-heavy pulses every 0.75 seconds. Each new level must persist for 0.75 seconds
+The iPhone gives a light tap every 2 seconds when it points at least 45°
+away from the next waypoint. At 100° or more, it switches to a double heavy knock
+every 0.75 seconds. Each new level must persist for 0.75 seconds
 before a pulse. Strong nudges downgrade at 80° or less, and all nudges stop at
 30° or less; these separate thresholds prevent compass noise from causing chatter.
-Facing the right way and arriving use the Find My–style vibration instead. Nudges work with voice
+Facing the right way (green arrow, within 20°) gives one crisp snap, then taps that
+speed up and strengthen as you get closer (`AlignedHaptics`); arriving plays a short
+burst. All vibration goes through one player, `OffCourseHapticPlayer`, driven from
+`ContentView.runCues()`. (`FindMyHaptics.swift` is no longer used.) Nudges work with voice
 muted and stop at arrival, invalid route input, or when the screen leaves the
 foreground. Actual haptic strength depends on the iPhone hardware and settings.
 
