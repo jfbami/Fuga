@@ -187,7 +187,8 @@ struct ContentView: View {
 
             Spacer()
 
-            ExitArrowView(relativeBearing: nav.relativeBearing, distanceMeters: nav.distanceRemaining)
+            ExitArrowView(relativeBearing: nav.relativeBearing, distanceMeters: nav.distanceRemaining,
+                          aligned: nav.phase == .arrived ? nil : nav.isAligned)
                 .padding(.bottom, 16)
 
             HStack {

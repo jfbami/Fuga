@@ -35,6 +35,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var distanceRemaining: Double = 0
     @Published private(set) var instruction = ""
     @Published private(set) var isOffRoute = false
+    /// Facing the way the arrow points (the arrow turns green). Has a little hysteresis so it doesn't flicker.
+    @Published private(set) var isAligned = false
     @Published private(set) var planPosition: Vec2?
     @Published private(set) var planHeading: Double = 0
     @Published private(set) var route: Route?
@@ -55,12 +57,12 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     private var announcedSoon = Set<Int>()
     private var announcedNow = Set<Int>()
     private var offRouteSince: TimeInterval?
+    private var arrivalDoor: Vec2?
 
     private let speech = AVSpeechSynthesizer()
-    private let haptic = UIImpactFeedbackGenerator(style: .heavy)
     private let notify = UINotificationFeedbackGenerator()
+    private let findMy = FindMyHaptics()
 
-    private let lookAhead = 2.5
     private let arrivalRadius = 1.5
 
     init(graph: HallwayGraph) {
@@ -100,6 +102,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         self.destination = destination
         let t = RouteTracker(points: route.points.map { Vec2(x: $0.x, y: $0.y) })
         tracker = t
+        arrivalDoor = Self.door(at: route, in: graph)
+        isAligned = false
         announcedSoon.removeAll()
         announcedNow.removeAll()
         offRouteSince = nil
@@ -107,7 +111,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         phase = .navigating
         try? AVAudioSession.sharedInstance().setActive(true)
         UIApplication.shared.isIdleTimerDisabled = true
-        haptic.prepare()
+        findMy.start()
 
         // You start facing the door, so the first instruction is usually to turn around.
         var opening = "Going to \(route.to.name), \(Int(route.lengthMeters.rounded())) meters."
@@ -132,9 +136,13 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         if let destination, let newRoute = graph.route(from: landmark.point, to: destination) {
             route = newRoute
             tracker = RouteTracker(points: newRoute.points.map { Vec2(x: $0.x, y: $0.y) })
+            arrivalDoor = Self.door(at: newRoute, in: graph)
             announcedSoon.removeAll()
             announcedNow.removeAll()
-            if phase == .arrived { phase = .navigating }
+            if phase == .arrived {
+                phase = .navigating
+                findMy.start()
+            }
         }
         notify.notificationOccurred(.success)
         say("Got it, you're at \(landmark.landmark ?? landmark.id).")
@@ -148,6 +156,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         pendingStart = nil
         alignment = nil
         planPosition = nil
+        isAligned = false
+        findMy.stop()
         speech.stopSpeaking(at: .immediate)
         UIApplication.shared.isIdleTimerDisabled = false
     }
@@ -201,21 +211,38 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         let (along, off) = tracker.project(position)
         self.tracker = tracker
         let remaining = max(0, tracker.total - along)
-        distanceRemaining = remaining + (off > 1.5 ? off : 0)
 
-        let target = remaining < arrivalRadius
-            ? (tracker.points.last ?? position)
-            : tracker.point(at: along + (off > 3 ? 1 : lookAhead))
-        relativeBearing = RouteTracker.relativeBearing(from: position, headingDegrees: heading, to: target)
+        if phase == .arrived {
+            // You're there: the arrow points at the door itself.
+            distanceRemaining = 0
+            if let door = arrivalDoor {
+                relativeBearing = RouteTracker.relativeBearing(from: position, headingDegrees: heading, to: door)
+            }
+            return
+        }
+
+        // Distance = how far you still have to walk to the destination along the route.
+        distanceRemaining = remaining
+
+        // The arrow follows the path drawn on the map. Far off it, point straight back to it.
+        if off > 3 {
+            relativeBearing = RouteTracker.relativeBearing(from: position, headingDegrees: heading,
+                                                           to: tracker.point(at: along + 1))
+        } else {
+            relativeBearing = RouteTracker.wrap(heading - tracker.pathDirection(at: along, position: position))
+        }
+        let error = abs(relativeBearing)
+        if isAligned ? error > ExitArrowView.alignedTolerance + 8 : error <= ExitArrowView.alignedTolerance {
+            isAligned.toggle()
+        }
+        findMy.update(aligned: isAligned, distanceMeters: remaining)
 
         handleOffRoute(off, time: frame.timestamp)
         if remaining < arrivalRadius {
             arrive()
             return
         }
-        if phase == .navigating {
-            announceTurns(tracker: tracker, along: along, remaining: remaining)
-        }
+        announceTurns(tracker: tracker, along: along, remaining: remaining)
     }
 
     func session(_ session: ARSession, didFailWithError error: Error) {
@@ -253,7 +280,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             announcedNow.insert(turn.vertex)
             announcedSoon.insert(turn.vertex)
             say("\(turn.spokenTurn.capitalizedFirst) now, then walk \(Int(turn.nextStretchMeters.rounded())) meters.")
-            buzz(turn.degrees > 0 ? 2 : 3)
         } else if toTurn <= 4, !announcedSoon.contains(turn.vertex) {
             announcedSoon.insert(turn.vertex)
             say("In \(max(1, Int(toTurn.rounded()))) meters, \(turn.spokenTurn).")
@@ -268,7 +294,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             if offRouteSince == nil { offRouteSince = time }
             if !isOffRoute, let since = offRouteSince, time - since > 2 {
                 isOffRoute = true
-                say("You're off the route. Turn until the phone vibrates, then walk. If you're next to a room, tap I'm at a landmark.")
+                say("You're off the route. Turn until the phone taps, then walk. If you're next to a room, tap I'm at a landmark.")
             }
         } else {
             offRouteSince = nil
@@ -282,9 +308,12 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     private func arrive() {
         guard phase == .navigating else { return }
         phase = .arrived
+        isAligned = false
+        distanceRemaining = 0
         instruction = route?.arrivalSentence ?? "You've arrived"
         say(instruction)
-        notify.notificationOccurred(.success)
+        findMy.stop()
+        findMy.arrived()
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
@@ -322,13 +351,13 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         speech.speak(utterance)
     }
 
-    /// Two pulses = turn left, three = turn right.
-    private func buzz(_ count: Int) {
-        for i in 0..<count {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.22) { [haptic] in
-                haptic.impactOccurred(intensity: 1.0)
-            }
-        }
+    /// The door of the room the route ends at (routes end on the hallway outside it).
+    static func door(at route: Route, in graph: HallwayGraph) -> Vec2? {
+        guard let end = route.points.last else { return nil }
+        let e = Vec2(x: end.x, y: end.y)
+        return graph.nodes.filter { $0.door != nil }
+            .min { ($0.point - e).length < ($1.point - e).length }
+            .flatMap { ($0.point - e).length < 1 ? $0.door : nil }
     }
 
     // MARK: Pose helpers

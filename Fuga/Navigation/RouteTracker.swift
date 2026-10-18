@@ -111,6 +111,23 @@ struct RouteTracker {
         return points.last ?? Vec2(x: 0, y: 0)
     }
 
+    /// Which way the arrow should point (plan degrees), following the drawn path:
+    /// along the hallway you're in, switching to the next hallway just before the corner,
+    /// with a small nudge back toward the path's centerline if you've drifted to one side
+    /// (never more than 35°, so it doesn't point you into a wall).
+    func pathDirection(at along: Double, position p: Vec2, switchAhead: Double = 0.8) -> Double {
+        guard points.count >= 2 else { return 0 }
+        let s = min(max(0, along + switchAhead), total - 1e-6)
+        var i = 0
+        while i < points.count - 2 && s > cumulative[i + 1] { i += 1 }
+        let a = points[i], ab = points[i + 1] - a
+        let len = max(ab.length, 1e-6)
+        // Signed distance from the segment's line: positive = you're to its left.
+        let left = (ab.x * (p.y - a.y) - ab.y * (p.x - a.x)) / len
+        let nudge = max(-35, min(35, atan2(left, 3) * 180 / .pi))
+        return RouteTracker.wrap(ab.angleDegrees - nudge)
+    }
+
     /// The next turn ahead of a distance along the route.
     func nextTurn(after along: Double) -> Turn? {
         turns.first { $0.distanceAlong > along - 0.5 }
