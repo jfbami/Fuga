@@ -1,0 +1,12 @@
+{
+  "revision": 12,
+  "verification": {
+    "integrity_check": "ok",
+    "foreign_key_errors": [],
+    "blob_checksum_errors": [],
+    "blobs_verified": 1628,
+    "embedded_bytes_verified": 4534407140,
+    "passed": true
+  },
+  "original_asset_checksums_unchanged": true
+}

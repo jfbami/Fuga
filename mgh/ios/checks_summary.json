@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-17",
+  "tests_passed": 18,
+  "tests": {
+    "quicklook_contract_geometry": 12,
+    "existing_http_contracts": 3,
+    "existing_phone_contracts": 3
+  },
+  "swift_syntax": {
+    "swift_files_parsed": 6,
+    "syntax_errors": [],
+    "plist_valid": true,
+    "native_ios_build_run": false
+  },
+  "real_model_http_smoke": {
+    "passed": true,
+    "http_status": 200,
+    "request_id": "quicklook-context-smoke",
+    "calibration_status": "exif_estimate",
+    "accepted": false,
+    "navigation_enabled": false
+  },
+  "xcode_build_run": false,
+  "on_device_test_run": false,
+  "gps_fusion_implemented": false,
+  "ocr_required": false,
+  "floor_2_3_recognition_available": false,
+  "route_registration_verified": false,
+  "independent_phone_accuracy_validated": false,
+  "local_http_smoke_server_closed": true
+}

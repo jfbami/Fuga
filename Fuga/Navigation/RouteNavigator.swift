@@ -29,6 +29,10 @@ struct PlanAlignment {
 /// hallway corrects any error in the starting direction, and you can re-pin at any
 /// landmark you pass.
 final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
+    // Route graph coordinates are not registered to the canonical scan, and no
+    // doorway/path anchors are verified. Neither manual nor automatic starts may
+    // turn on guidance until that work is reviewed.
+    static let guidanceEnabled = false
     enum Phase: Equatable { case idle, navigating, arrived }
 
     // MARK: Published state
@@ -106,6 +110,10 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
     /// You're standing in front of `landmark`'s door, facing it. Route to `destination`.
     func start(at landmark: HallwayGraph.Node, to destination: HallwayGraph.Destination) {
+        guard Self.guidanceEnabled else {
+            instruction = "Guidance is waiting for location and path verification."
+            return
+        }
         guard let route = graph.route(from: landmark.point, to: destination,
                                       fromName: landmark.landmark ?? landmark.id) else { return }
         if let frame = lastFrame, trackingReady {
@@ -146,6 +154,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     /// "I'm next to this landmark right now" during a walk: fixes position drift.
     /// Keeps the current direction estimate (you don't need to face the door).
     func repin(at landmark: HallwayGraph.Node) {
+        guard Self.guidanceEnabled else { return }
         guard let frame = lastFrame, trackingReady else { return }
         pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: true)
         if let destination, let newRoute = graph.route(from: landmark.point, to: destination) {
@@ -404,5 +413,5 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 }
 
 private extension String {
-    var capitalizedFirst: String { prefix(1).uppercased() + dropFirst() }
+    var capitalizedFirst: String { self.prefix(1).uppercased() + dropFirst() }
 }

@@ -2,7 +2,9 @@
 
 **Indoor directions, room to room.**
 
-Fuga guides you through a building you don't know: pick a room, and the phone points the way with a Find My–style arrow, spoken turns and vibration. It's built for blind and low-vision people, new students and visitors. Each building is scanned once with a LiDAR iPhone and lined up with UW's floor plans; after that, any iPhone can be guided.
+Fuga is a prototype for indoor wayfinding with a Find My–style arrow, spoken turns and vibration. The intended flow is: choose a floor, say a destination, and give the camera a quick look to find your starting location. Automatic localization and route alignment are still being tested; reliable guidance on ordinary iPhones has not been demonstrated. This is general wayfinding, not a validated emergency-navigation system.
+
+The new **Find my location** screen captures calibrated ARKit frames, accepts a spoken destination, and can query the development map matcher. It saves a private diagnostic to share for analysis. Walking guidance is held until map/doorway/path verification. See [the phone-test guide](mgh/ios/PHONE_TEST_GUIDE.md). Existing arrow, route rendering and haptic implementations are preserved.
 
 Built at DubHacks '26.
 

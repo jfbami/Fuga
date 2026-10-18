@@ -6,7 +6,8 @@ Research prototype for Mary Gates Hall (MGH) floor 4: a regular phone camera est
 
 | Path | Contents |
 |---|---|
-| `project/PROJECT_LOG.md` | Full history, decision register (D001-D022), roadmap. **Read first.** |
+| `project/PROJECT_LOG.md` | Full history, decision register and roadmap. **Read first.** |
+| `ios/PHONE_TEST_GUIDE.md` | Teammate's Xcode install and first calibrated iPhone camera test |
 | `AGENTS.md` | Ground rules for anyone, human or AI, working on the data |
 | `localization/mgh_localizer.py` | DISK + LightGlue localizer CLI (`build`, `evaluate`, `query`) |
 | `localization/audit_v2_retrieval_correspondence/AUDIT_REPORT.md` | Latest findings: why v2 accepted only 1/20 |
@@ -75,3 +76,11 @@ The newer app branch uses a separate ARWorldMap and plan-meter graph without 440
 Two additional original scans and full plans for floors 2/3/4 are preserved privately in the sole master. Separate floor-2/3 prototypes are built; cross-scan/plan registration and elevator connectivity remain pending. Only the small text inventory and verification receipt under `project/data_inventory_revision9/` are public here. New scan originals/geometry, source/raster floor plans, plan-derived coordinates, the room CSV/JSON and private review viewer are excluded.
 
 The owner has a private catalog of 305 plan labels: 230 room-number labels, 56 other plan spaces, 14 stair labels and 5 elevator labels. Six floor-4 plan doorway candidates cover 416, 420, 430 and 440; 430/440 each have two corridor entrances. Measured sign candidates exist for 416/430/440 in the staircase scan frame, while the selected 420 sign lacks confident depth. Sign points and printed plan-label points are not doorway thresholds. Verified 3D doorway anchors remain zero; routing stays disabled. Existing app arrow code is unchanged.
+
+## Latest: floor, voice destination and quick-look phone test
+
+The public app work through `nav/route-guidance` fbcfcc1 is merged into this branch, retaining its arrow/path/haptics. `Fuga/Localization/` adds a floor selector, on-device spoken destination input (typed fallback), three same-frame calibrated ARKit captures, optional contextual HTTP matching and private JSON export. Room-number OCR is optional and not required or implemented. GPS fusion is not implemented.
+
+The teammate should follow [PHONE_TEST_GUIDE.md](ios/PHONE_TEST_GUIDE.md). First build in Xcode and capture without a server. Native compilation, image orientation/calibration verification and real iPhone tests remain outstanding. The Windows checks passed 18 tests, a real model/image HTTP smoke check and Swift syntax/plist checks; none establishes phone accuracy or reliable quick-look latency. The canonical revision-12 receipt is in `ios/archive_verification.json` after the transaction completes.
+
+Both manual and automatic guidance starts are blocked until canonical registration and entrance/path checks. The external public graph/alignment files retained from the app branch remain unreviewed; they have not become canonical anchors. Floors 2/3 have separate reconstructed prototypes, but contextual matching refuses them until recognition maps exist. Later recognition changes require new held-out data; consumed A/B scores are unchanged historical results. Original phone footage/images, floor plans and extracted private plan coordinates stay out of this repository.

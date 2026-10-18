@@ -33,6 +33,20 @@ class PhoneEngine:
         return phone.localize_phone(image, calibration, self.references, self.extractor,
                                      self.matcher, self.retrieval, status)
 
+    def localize_for_context(self, image, calibration, status, building, floor):
+        # Current visual maps cover the staircase recording, not the new floor-2/3
+        # reconstructions. Do not silently search another floor or infer a floor from GPS.
+        if building != 'MGH' or floor != 4 or self.manifest.get('scan_id') != 'b9dca4993d':
+            return dict(accepted=False, pose_usable_for_app=False,
+                        status='selected_floor_map_unavailable', supported_floors=[4])
+        # Conservatively omit stairs/landings: reviewed continuous floor-4 corridor
+        # segment begins after 48 s; 60 s is an exclusion margin, not a new alignment.
+        references = [r for r in self.references if r['metadata']['capture_seconds'] >= 60]
+        result = phone.localize_phone(image, calibration, references, self.extractor,
+                                      self.matcher, self.retrieval, status)
+        result['reference_context'] = 'MGH floor-4 corridor segment >=60s; no scan-to-plan registration'
+        return result
+
 
 def localize_payload(payload, engine):
     started = time.monotonic()
@@ -44,6 +58,10 @@ def localize_payload(payload, engine):
         raise ValueError('A request_id (1-128 characters) is required.')
     if isinstance(capture_timestamp, bool) or not isinstance(capture_timestamp, (int, float)) or not math.isfinite(capture_timestamp):
         raise ValueError('A finite capture_timestamp is required for frame association.')
+    building, floor = payload.get('building_id'), payload.get('selected_floor')
+    has_context = building is not None or floor is not None
+    if has_context and (not isinstance(building, str) or not building or type(floor) is not int or floor not in {2, 3, 4}):
+        raise ValueError('Context requires building_id and integer selected_floor (2, 3 or 4).')
     encoded = payload.get('image_base64')
     if not isinstance(encoded, str) or len(encoded) > MAX_BODY_BYTES:
         raise ValueError('Missing or oversized image.')
@@ -67,7 +85,12 @@ def localize_payload(payload, engine):
         if any(isinstance(parameters[k], bool) or not isinstance(parameters[k], (int, float)) or not math.isfinite(parameters[k]) for k in required):
             raise ValueError('Intrinsics must contain finite numbers.')
     image, calibration = phone.prepare_query(io.BytesIO(raw), parameters)
-    result = engine.localize(image, calibration, status)
+    if has_context:
+        if not hasattr(engine, 'localize_for_context'):
+            raise ValueError('This engine does not support building/floor context.')
+        result = engine.localize_for_context(image, calibration, status, building, floor)
+    else:
+        result = engine.localize(image, calibration, status)
     # Even a custom engine cannot promote an uncalibrated result at this boundary.
     trusted = bool(result.get('accepted') and result.get('pose_usable_for_app') and status == 'verified')
     result.update(accepted=trusted, pose_usable_for_app=trusted,
@@ -78,6 +101,8 @@ def localize_payload(payload, engine):
         pose_timestamp_meaning='Pose belongs to capture_timestamp, not response time.',
         request_runtime_seconds=time.monotonic() - started,
         registered_to_building=False, route_available=False, navigation_enabled=False)
+    if has_context:
+        result.update(building_id=building, selected_floor=floor)
     return result
 
 

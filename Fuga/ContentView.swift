@@ -17,6 +17,7 @@ struct ContentView: View {
         var label: String { self == .threeD ? "3D map. Tap for flat map" : self == .flat ? "Flat map. Tap to hide" : "Map hidden. Tap for 3D map" }
     }
     @State private var showRepin = false
+    @State private var showQuickLook = false
 
     init() {
         guard let graph = HallwayGraph.load(resource: "mgh4_graph") else {
@@ -44,6 +45,7 @@ struct ContentView: View {
         }
         .onAppear { nav.runCamera() }
         .onDisappear { nav.pauseCamera() }
+        .sheet(isPresented: $showQuickLook) { QuickLookView(session: nav.session) }
     }
 
     // MARK: Start
@@ -55,7 +57,15 @@ struct ContentView: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.7))
 
-                sectionTitle("Where are you?", subtitle: "Pick the room or landmark you're closest to.")
+                Button { showQuickLook = true } label: {
+                    Label("Find my location · say a destination", systemImage: "camera.viewfinder")
+                        .font(.headline).frame(maxWidth: .infinity).padding(12)
+                }
+                .buttonStyle(.borderedProminent).tint(.fugaGreen)
+                Text("Camera recognition test. Walking guidance is awaiting location and path verification.")
+                    .font(.footnote).foregroundStyle(.white.opacity(0.8))
+
+                sectionTitle("Manual starting-point demo", subtitle: "Use Find my location above for the camera test. Walking guidance awaits verification.")
                 VStack(spacing: 8) {
                     ForEach(nav.graph.landmarks, id: \.id) { node in
                         choice(node.landmark ?? node.id, selected: here == node.id) {
@@ -101,7 +111,7 @@ struct ContentView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.fugaGreen)
-                .disabled(hereNode == nil || destination == nil || !nav.trackingReady)
+                .disabled(!RouteNavigator.guidanceEnabled || hereNode == nil || destination == nil || !nav.trackingReady)
             }
             .padding(20)
         }
