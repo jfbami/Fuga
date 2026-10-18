@@ -3,7 +3,7 @@ import SwiftUI
 /// Screens over the live camera:
 /// 1. Start: "Where are you?" (pick the room or landmark you're next to), "Where to?", Start.
 /// 2. Guidance: Find My–style arrow, distance, next instruction, spoken turns and vibration.
-///    "I'm at a landmark" re-pins your position if it drifts. Optional ElevenLabs direction
+///    "I'm at a landmark" re-pins your position if it drifts. Juno narration and direction
 ///    cues and off-course nudges (pulses when you face well away from the route).
 struct ContentView: View {
     @StateObject private var nav: RouteNavigator
@@ -19,17 +19,18 @@ struct ContentView: View {
     }
     @State private var showRepin = false
     @State private var showQuickLook = false
-    @StateObject private var voice = VoiceGuidance()
+    @StateObject private var voice: VoiceGuidance
+    @StateObject private var haptics = OffCourseHapticPlayer()
     @State private var offCourseHaptics = OffCourseHaptics()
-    @State private var subtleHapticPulse = 0
-    @State private var strongHapticPulse = 0
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
         guard let graph = HallwayGraph.load(resource: "mgh4_graph") else {
             fatalError("mgh4_graph.json is missing from the app bundle (Fuga/Maps).")
         }
-        _nav = StateObject(wrappedValue: RouteNavigator(graph: graph))
+        let navigator = RouteNavigator(graph: graph)
+        _nav = StateObject(wrappedValue: navigator)
+        _voice = StateObject(wrappedValue: navigator.narration)
         walls = BuildingWalls.load(resource: "mgh4_walls") ?? .schematic(from: graph)
     }
 
@@ -52,31 +53,29 @@ struct ContentView: View {
         .onAppear { nav.runCamera() }
         .onDisappear { nav.pauseCamera() }
         .sheet(isPresented: $showQuickLook) { QuickLookView(session: nav.session) }
-        // Off-course nudges: light pulses at 45°+ away from the route, heavy at 100°+.
-        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: subtleHapticPulse) { _, _ in
-            scenePhase == .active
-        }
-        .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: strongHapticPulse) { _, _ in
-            scenePhase == .active
-        }
         .task(id: scenePhase) { await runCues() }
         .onDisappear {
             voice.stop()
             offCourseHaptics.reset()
+            haptics.stop()
+        }
+        .onChange(of: showQuickLook) { _, shown in
+            if shown { voice.stop(); haptics.stop() }
         }
     }
 
     /// Samples the navigator 4 times a second for the ElevenLabs direction cues and the
     /// off-course nudges. Only while walking a route: arrival is announced by the navigator
-    /// (by room name), so these never get an arrival distance.
+    /// with a bundled Juno cue, so these never get an arrival distance.
     private func runCues() async {
         offCourseHaptics.reset()
         guard scenePhase == .active else {
             voice.stop()
+            haptics.stop()
             return
         }
         while !Task.isCancelled {
-            if nav.phase == .navigating, nav.distanceRemaining >= 1.5 {
+            if nav.phase == .navigating, nav.trackingReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
                 // Don't talk over a spoken turn instruction.
                 if !nav.isSpeaking {
                     voice.update(bearing: nav.relativeBearing, distance: nav.distanceRemaining)
@@ -84,19 +83,18 @@ struct ContentView: View {
                 if let strength = offCourseHaptics.update(bearing: nav.relativeBearing,
                                                           distance: nav.distanceRemaining,
                                                           now: ProcessInfo.processInfo.systemUptime) {
-                    switch strength {
-                    case .subtle: subtleHapticPulse += 1
-                    case .strong: strongHapticPulse += 1
-                    }
+                    haptics.play(strength)
                 }
             } else {
-                voice.silence()
+                if nav.phase == .navigating { voice.silence() }
                 offCourseHaptics.reset()
+                if nav.phase != .idle { haptics.stop() }
             }
             do { try await Task.sleep(for: .milliseconds(250)) } catch { break }
         }
         voice.stop()
         offCourseHaptics.reset()
+        haptics.stop()
     }
 
     // MARK: Start
@@ -115,6 +113,21 @@ struct ContentView: View {
                 .buttonStyle(.borderedProminent).tint(.fugaGreen)
                 Text("Camera recognition test. Walking guidance is awaiting location and path verification.")
                     .font(.footnote).foregroundStyle(.white.opacity(0.8))
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Audio & vibration check").font(.headline)
+                    Button("Test Juno") { voice.testVoice() }
+                    HStack {
+                        Button("Subtle vibration") { haptics.play(.subtle) }
+                        Button("Strong vibration") { haptics.play(.strong) }
+                    }
+                    Text(voice.status)
+                    Text(haptics.status)
+                    Text("These buttons test your phone directly. Automatic route cues remain off until walking guidance is verified.")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .foregroundStyle(.white)
 
                 sectionTitle("Manual starting-point demo", subtitle: "Use Find my location above for the camera test. Walking guidance awaits verification.")
                 VStack(spacing: 8) {
@@ -223,7 +236,7 @@ struct ContentView: View {
                         .padding(10)
                         .background(.ultraThinMaterial, in: Circle())
                 }
-                .accessibilityLabel(voice.isEnabled ? "Direction cues on. Tap to mute" : "Direction cues off. Tap to turn on")
+                .accessibilityLabel(voice.isEnabled ? "Juno narration on. Tap to mute" : "Juno narration off. Tap to turn on")
                 Button { mapMode = mapMode.next } label: {
                     Image(systemName: mapMode.icon)
                         .font(.title3)
@@ -239,7 +252,7 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 10)
-            Text("Direction cues: \(voice.status)")
+            Text("Narration: \(voice.status)")
                 .font(.caption)
                 .foregroundStyle(.white.opacity(0.6))
                 .frame(maxWidth: .infinity, alignment: .leading)

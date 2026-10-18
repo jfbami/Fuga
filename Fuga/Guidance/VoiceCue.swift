@@ -3,6 +3,7 @@ import Foundation
 /// Stable, finite vocabulary so every instruction can be bundled for offline use.
 enum VoiceCue: String, CaseIterable {
     case ahead, left, right, behind, arrived
+    case starting, leftSoon, rightSoon, offRoute, backOnRoute, repinned, test
 
     var text: String {
         switch self {
@@ -10,7 +11,14 @@ enum VoiceCue: String, CaseIterable {
         case .left: return "Turn to your left."
         case .right: return "Turn to your right."
         case .behind: return "Turn around."
-        case .arrived: return "You've reached the exit."
+        case .arrived: return "You've reached your destination."
+        case .starting: return "Your route is ready. Turn to follow the arrow, then continue ahead."
+        case .leftSoon: return "Prepare to turn left."
+        case .rightSoon: return "Prepare to turn right."
+        case .offRoute: return "You're off the route. Stop and check your location before continuing."
+        case .backOnRoute: return "You're back on the route."
+        case .repinned: return "Your starting position has been updated."
+        case .test: return "Hi, I'm Juno. I'll guide you with spoken directions. Vibration means you're pointing away from the route."
         }
     }
 

@@ -5,16 +5,30 @@ import Foundation
 /// Plays ElevenLabs clips generated before shipping; never needs network or an API key.
 @MainActor
 final class VoiceGuidance: ObservableObject {
-    @Published private(set) var isEnabled = false
-    @Published private(set) var status = "Voice off"
+    @Published private(set) var isEnabled = true
+    @Published private(set) var status = "Juno voice on"
     private let synthesizer = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
     private var scheduler = VoiceCueScheduler()
+    var isSpeaking: Bool { player?.isPlaying == true || synthesizer.isSpeaking }
+    private var priorityPlayback = false
+
+    /// Route events preempt directional reminders; both use the same Juno player.
+    func announce(_ cue: VoiceCue) {
+        guard isEnabled else { return }
+        priorityPlayback = true
+        speak(cue)
+    }
+
+    func testVoice() {
+        setEnabled(true)
+        announce(.test)
+    }
 
     func setEnabled(_ enabled: Bool) {
         stop()
         isEnabled = enabled
-        status = enabled ? "Voice on" : "Voice off"
+        status = enabled ? "Juno voice on" : "Voice off"
     }
 
     func stop() {
@@ -27,10 +41,13 @@ final class VoiceGuidance: ObservableObject {
         if player != nil { player?.stop(); player = nil }
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         scheduler = VoiceCueScheduler()
+        priorityPlayback = false
     }
 
     func update(bearing: Double, distance: Double) {
         guard isEnabled else { return }
+        if priorityPlayback && isSpeaking { return }
+        priorityPlayback = false
         guard let cue = VoiceCue.resolve(bearing: bearing, distance: distance) else {
             stop()
             return
@@ -57,9 +74,13 @@ final class VoiceGuidance: ObservableObject {
         if let url, let audio = try? AVAudioPlayer(contentsOf: url) {
             player = audio
             if audio.play() {
-                status = "ElevenLabs voice"
+                status = "Juno · ElevenLabs"
                 return
             }
+        }
+        if cue == .test {
+            status = "Juno test failed — bundled audio missing or unreadable. Rebuild the app."
+            return
         }
         let utterance = AVSpeechUtterance(string: cue.text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")

@@ -1,3 +1,29 @@
+## Native audio and vibration test (Juno)
+
+Build the integrated `codex/juno-native-fix` branch in Xcode, install on a physical
+iPhone, and use **Audio & vibration check** on the start screen:
+
+1. **Test Juno** must play the bundled Juno introduction and show `Juno · ElevenLabs`.
+   A missing/unplayable test clip reports failure instead of silently using Apple speech.
+2. **Subtle vibration** sends a short low-intensity pulse; **Strong vibration** sends
+   a 0.3-second maximum-intensity pulse. Check the status text if neither can be felt.
+3. Background the app to confirm playback stops. Repeat in airplane mode.
+
+Juno (`3T3dPoABJjGZZAI1eif7`) is enabled by default and now handles route events
+and direction reminders through one player. Bundled narration covers start, turns,
+upcoming turns, off-route/back-on-route, position updates, and arrival. Dynamic room
+names and exact distances remain on screen; they are not spoken by these offline clips.
+Apple speech remains an explicitly labeled fallback if a route clip cannot play.
+
+The integrated branch deliberately sets `RouteNavigator.guidanceEnabled = false`
+because the route graph and physical paths are not yet verified. These changes
+preserve that block. Automatic off-course cues therefore remain disabled; the test
+buttons are independent of routing and do not claim a valid walking route. Once
+verified routing is enabled, only off-course nudges run (no alignment/arrival buzzes).
+
+The GitHub iOS build workflow compiles the actual app with an iOS SDK and verifies
+all twelve MP3s are present in its bundle. Hardware feel still requires the phone test.
+
 # Fuga
 
 **Indoor directions, room to room.**
@@ -26,7 +52,7 @@ python3 scripts/generate_voice.py
 
 The default voice is `3T3dPoABJjGZZAI1eif7`, selected for Fuga, with
 `eleven_multilingual_v2`. Set `ELEVENLABS_VOICE_ID` or pass `--voice-id` to change it.
-Generation makes five billable text-to-speech requests and writes
+Generation makes twelve billable text-to-speech requests and writes
 `Fuga/VoiceAudio/fuga_*.mp3`; the synchronized Xcode folder includes them in the app.
 Keep the generated clips with the app when distributing it. The script preserves
 the existing set if any API request fails. API reference:
