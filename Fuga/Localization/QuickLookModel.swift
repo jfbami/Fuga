@@ -4,24 +4,33 @@ import Foundation
 
 @MainActor
 final class QuickLookModel: ObservableObject {
+    enum LocationState: String {
+        case unconfirmed = "Not located yet"
+        case checking = "Checking the camera"
+        case mapUnavailable = "Recognition map not ready"
+        case candidate = "Possible location — unverified"
+    }
     @Published private(set) var busy = false
-    @Published private(set) var message = "Choose your floor, say a destination, then look down the hallway."
+    @Published private(set) var message = "Choose your floor and point the camera down the hallway."
+    @Published private(set) var locationState: LocationState = .unconfirmed
     @Published private(set) var exportURL: URL?
     private var task: Task<Void, Never>?
     private var generation = UUID()
 
     func cancel() {
         generation = UUID(); task?.cancel(); task = nil; busy = false; exportURL = nil
-        message = "Choose your floor, say a destination, then look down the hallway."
+        message = "Choose your floor and point the camera down the hallway."
+        locationState = .unconfirmed
     }
 
     func find(session: ARSession, floor: Int, destination: String, endpoint: String) {
         cancel()
         let token = generation
-        busy = true; exportURL = nil
+        busy = true; exportURL = nil; locationState = .checking
         task = Task {
             var requests = [[String: Any]](), responses = [[String: Any]]()
             var outcome = "Not located yet."
+            var finding: LocationState = .unconfirmed
             let sessionID = UUID().uuidString
             do {
                 // Capture a short burst FIRST; network response latency cannot change its poses.
@@ -44,9 +53,10 @@ final class QuickLookModel: ObservableObject {
                 try Task.checkCancellation()
                 guard generation == token else { return }
                 if floor != 4 {
+                    finding = .mapUnavailable
                     outcome = "Floor \(floor) is captured for testing. Its recognition map is not ready yet."
                 } else if endpoint.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    outcome = "Camera test saved. Set the development server address to test map recognition."
+                    outcome = "Camera test saved. Your location has not been determined; connect the test server to try recognition."
                 } else {
                     guard let base = URL(string: endpoint), ["http", "https"].contains(base.scheme ?? ""),
                           base.host != nil, base.user == nil, base.password == nil else {
@@ -80,6 +90,7 @@ final class QuickLookModel: ObservableObject {
                     outcome = consistent
                         ? "Possible starting location found. Saved for review; the walking route still needs verification."
                         : "Starting location is uncertain. Try a view with doors, corners or windows."
+                    finding = consistent ? .candidate : .unconfirmed
                 }
             } catch is CancellationError { return }
             catch { outcome = error.localizedDescription }
@@ -100,7 +111,7 @@ final class QuickLookModel: ObservableObject {
                     .write(to: url, options: [.atomic, .completeFileProtection])
                 exportURL = url
             } catch { outcome += " Could not save the diagnostic: \(error.localizedDescription)" }
-            message = outcome; busy = false
+            message = outcome; locationState = finding; busy = false
         }
     }
 }

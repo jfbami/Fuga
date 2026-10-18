@@ -3,6 +3,11 @@ import SwiftUI
 
 struct QuickLookView: View {
     let session: ARSession
+    var showsCloseButton = true
+    var onCameraWork: () -> Void = {}
+    var feedbackAction: (() -> Void)? = nil
+    var feedbackRunning = false
+    var feedbackStep = ""
     @Environment(\.dismiss) private var dismiss
     @StateObject private var model = QuickLookModel()
     @StateObject private var voice = DestinationVoice()
@@ -19,13 +24,14 @@ struct QuickLookView: View {
                         .accessibilityLabel("Live hallway camera")
                 }
                 Section {
-                    Text("Select your floor, say where you want to go, and give the camera a quick look at the hallway.")
+                    Text("Point the camera down the hallway. You don't need to select your starting room.")
                     Picker("I'm on floor", selection: $floor) {
                         ForEach([2, 3, 4], id: \.self) { Text("Floor \($0)").tag($0) }
                     }.pickerStyle(.segmented)
-                    TextField("Destination room, e.g. 440", text: $destination)
+                    TextField("Destination room (optional), e.g. 440", text: $destination)
                         .textInputAutocapitalization(.characters).autocorrectionDisabled()
                     Button {
+                        onCameraWork()
                         if voice.listening { voice.stop() } else { Task { await voice.start() } }
                     } label: {
                         Label(voice.listening ? "Stop listening" : "Say your destination", systemImage: "mic.fill")
@@ -39,32 +45,51 @@ struct QuickLookView: View {
                 .disabled(model.busy)
 
                 Section {
+                    LabeledContent("Starting location", value: model.locationState.rawValue)
                     if floor != 4 {
-                        Text("Floor \(floor) can be captured for testing. Automatic recognition is currently available for floor 4 only.")
+                        Text("Floor \(floor) can be captured for testing. Recognition maps for this floor are still being prepared.")
                     }
-                    Button("Find my starting location") {
+                    Button("Find where I am") {
+                        onCameraWork()
                         voice.stop()
                         model.find(session: session, floor: floor, destination: destination, endpoint: endpoint)
                     }
-                    .disabled(model.busy || DestinationVoice.room(in: destination) == nil)
+                    .disabled(model.busy)
                     if model.busy { ProgressView() }
                     Text(model.message).accessibilityLabel(model.message)
-                    if let url = model.exportURL {
-                        ShareLink(item: url) { Label("Share camera test", systemImage: "square.and.arrow.up") }
-                        Text("Includes camera images and movement data. Share it with the project for analysis.")
+                }
+                if let feedbackAction {
+                    Section {
+                        Button(action: feedbackAction) {
+                            Label(feedbackRunning ? "Stop test" : "Test voice & vibration",
+                                  systemImage: feedbackRunning ? "stop.fill" : "waveform")
+                        }
+                        .disabled(model.busy || voice.listening)
+                        if feedbackRunning { Text(feedbackStep) }
+                        Text("Plays sample feedback. It does not mean your location has been found.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }
-                Section("Development test") {
-                    TextField("Server URL (optional for capture only)", text: $endpoint)
-                        .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
-                        .disabled(model.busy)
-                    Text("Frames go to this server only when you tap Find. Recognition is still being tested. Arrow and buzz guidance stay off until location, entrances and paths are verified.")
-                        .font(.footnote).foregroundStyle(.secondary)
+                Section {
+                    DisclosureGroup("Camera test settings & export") {
+                        TextField("Server URL (optional for capture only)", text: $endpoint)
+                            .keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+                            .disabled(model.busy)
+                        if let url = model.exportURL {
+                            ShareLink(item: url) { Label("Share camera test", systemImage: "square.and.arrow.up") }
+                            Text("Includes camera images and movement data. Share it privately with the project.")
+                        }
+                        Text("Without a server this saves a test, not a location. Arrow and buzz guidance stay off until location, entrances and paths are verified.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
                 }
             }
-            .navigationTitle("Find my location")
-            .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .navigationTitle("Find where I am")
+            .toolbar {
+                if showsCloseButton {
+                    ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                }
+            }
             .onChange(of: voice.transcript) { _, text in
                 if let room = DestinationVoice.room(in: text) { destination = room }
             }

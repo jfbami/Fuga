@@ -4,7 +4,7 @@
 
 Fuga is a prototype for indoor wayfinding with a Find My–style arrow, spoken turns and vibration. The intended flow is: choose a floor, say a destination, and give the camera a quick look to find your starting location. Automatic localization and route alignment are still being tested; reliable guidance on ordinary iPhones has not been demonstrated. This is general wayfinding, not a validated emergency-navigation system.
 
-The new **Find my location** screen captures calibrated ARKit frames, accepts a spoken destination, and can query the development map matcher. It saves a private diagnostic to share for analysis. Walking guidance is held until map/doorway/path verification. See [the phone-test guide](mgh/ios/PHONE_TEST_GUIDE.md). Existing arrow, route rendering and haptic implementations are preserved.
+The new **Find where I am** screen captures calibrated ARKit frames, accepts a spoken destination, and can query the development map matcher. It saves a private diagnostic to share for analysis. Walking guidance is held until map/doorway/path verification. See [the phone-test guide](mgh/ios/PHONE_TEST_GUIDE.md). Existing arrow, route rendering and haptic implementations are preserved.
 
 Built at DubHacks '26.
 
@@ -74,19 +74,19 @@ Adding files: the `Fuga/` folder is synced with the project, so new Swift files 
 
 If the project won't open on your Xcode, regenerate it with [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen && xcodegen`.
 
-## Try it in Mary Gates Hall, 4th floor
+## Find where I am
 
-The floor's map ships inside the app, so anyone can open Fuga and go. No setup, no scanning.
+The app opens directly to the live camera and **Find where I am**. Select your current floor as search context; do not select a starting room or landmark. Speak a destination such as "Take me to room 440," or check your location first and choose a destination afterward.
 
-1. Open Fuga. Under **Where are you?**, pick the room or landmark you're closest to: the Elevator, 416 iLounge, 420 Student Services, or either door of 430 Computer Classroom.
-2. Stand in front of that door, facing it, phone upright. That tells Fuga exactly where you are and which way you're facing.
-3. Under **Where to?**, pick a room and tap **Start**. It tells you which way to turn first (usually "Turn around").
-4. Follow the arrow. It points along the route drawn on the map: down the hallway you're in, swinging to the next hallway just before each corner. The number under it is how far you still have to walk to the room.
-5. Look through the camera: a **solid green line on the hallway floor** runs from your feet to the room, like the route in Apple Maps, with a soft highlight sweeping along it. Walls the phone sees hide it where it turns a corner (Pro iPhones use the LiDAR 3D mesh; other iPhones use the wall planes ARKit detects).
-6. Vibration works like Find My: when you turn to face the way the arrow points, it turns green with a firm **snap**, then **taps** while you keep facing that way, faster and stronger as you get closer. Face the wrong way and it goes quiet. At a corner the arrow swings, the taps stop, and they come back when you've turned. Turns are also spoken 4 m ahead and at the corner, and on arrival a short burst plays, it says which side the door is on, and the arrow points at the door.
-7. Passing a room on the list? Tap **I'm at a landmark** and pick it to fix any drift. It re-plans the route from there.
+1. Point the camera down a hallway with doors, corners or windows.
+2. Tap **Find where I am**. The app captures three matching image/calibration/ARKit pose pairs.
+3. With the test server configured, it checks those frames against the saved visual reference map. Without a server, it only saves a camera test and leaves the location unconfirmed.
+4. Status distinguishes **Not located yet**, **Checking the camera**, **Recognition map not ready**, and **Possible location - unverified**. An exported file or visual match is not a confirmed starting location.
+5. Expand **Camera test settings & export** to configure the development server or privately share the calibrated JSON. Use **Test voice & vibration** to hear/feel feedback examples; these are not real route directions.
 
-How it works: the landmark you pick pins your spot and direction on the UW floor plan. ARKit then follows every step with the camera and motion sensors. Walking straight down a hallway corrects the direction if you weren't facing the door squarely (tested: recovers a 28° error). Routes are computed on the phone over a small hallway graph (`Fuga/Maps/mgh4_graph.json`).
+Walking guidance remains disabled. The reconstruction supplies 3D reference features to the experimental matcher, but its camera coordinates are not yet registered to the app's route graph. Room 440 still needs reviewed entrance/path anchors and a graph destination. Floor-2/3 reconstructed meshes are not yet recognition maps. The teammate's latest removal of the 3D display is preserved.
+
+Read [the reconstruction-to-navigation explanation](mgh/ios/RECONSTRUCTION_TO_NAVIGATION.md) and [the phone test guide](mgh/ios/PHONE_TEST_GUIDE.md). The first native build and capture test of this revised screen are still required.
 
 ## What's in the app
 
