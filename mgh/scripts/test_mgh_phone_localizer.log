@@ -1,0 +1,7 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.131s
+
+OK

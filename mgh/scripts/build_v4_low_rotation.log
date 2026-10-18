@@ -1,0 +1,65 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Built 20 reference views at frame 2214
+Built 40 reference views at frame 4222
+Built 60 reference views at frame 6155
+Built 80 reference views at frame 8018
+Built 100 reference views at frame 9928
+Built 120 reference views at frame 11739
+Built 140 reference views at frame 13781
+{
+  "format": "MGH visual reference map v3",
+  "scan_id": "b9dca4993d",
+  "coordinate_frame_id": "scan:b9dca4993d",
+  "original_zip_sha256": "fad8269ab014cf1122ca97c8cedcd7e9baca355d8b0648d4e6a88d4a02b25fb1",
+  "feature_extractor": "pretrained DISK depth weights",
+  "max_keypoints": 1024,
+  "matching": "pretrained LightGlue disk; geometric PnP verification",
+  "device": "cpu",
+  "learned_building_specific_weights": false,
+  "features_use_recorded_depth_and_pose": true,
+  "query_solver_requires_depth": false,
+  "registered_to_building": false,
+  "enabled_navigation": false,
+  "torch_version": "2.14.1+cpu",
+  "cv2_version": "5.0.0",
+  "weights_at_build": [
+    {
+      "filename": "depth-save.pth",
+      "sha256": "9c2ee4ded238892dfa51569941372601e35e4a74aa6f84ea80053d2ab1c07abe",
+      "bytes": 4375832
+    },
+    {
+      "filename": "disk_lightglue_v0-1_arxiv.pth",
+      "sha256": "b5b21d47ea24f2c5e501aec9c91b9716e4c8c3429a4dc1e615c133c4c9378335",
+      "bytes": 47631405
+    }
+  ],
+  "video_frame_selection": "sequential decoded video ordinal + timestamp-fingerprint-verified offset -> odometry/depth row; no CAP_PROP_POS_FRAMES seeking",
+  "video_association": {
+    "verified": true,
+    "row_minus_decoded_ordinal": 1,
+    "decoded_frames": 14337,
+    "odometry_rows": 14338,
+    "odometry_gaps_over_30ms": 936,
+    "gap_agreement": 1.0,
+    "max_residual_seconds": 0.007391874664861575,
+    "method": "CAP_PROP_POS_MSEC after sequential grab vs odometry timestamps; irregular-gap fingerprint"
+  },
+  "frame_index_meaning": "frame = odometry/depth row (acquisition index); decoded_video_ordinal = frame - row_minus_decoded_ordinal",
+  "reference_selection": {
+    "mode": "low_rotation",
+    "stride_rows": 90
+  },
+  "implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+  "stride_frames": 90,
+  "reference_count": 146,
+  "total_confident_3d_features": 79062,
+  "runtime_seconds": 376.6869999999999,
+  "limitations": [
+    "Recorded-pose/depth map without global optimization.",
+    "No independent phone test.",
+    "Floor hints are approximate capture context, not an input to query retrieval.",
+    "No verified doorway anchors or enabled route graph."
+  ]
+}

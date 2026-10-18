@@ -1,0 +1,12 @@
+{
+  "reason": "Evaluate the low-rotation map declared before the independent photos were supplied; not a new map tuned to those photos.",
+  "images": [
+    "IMG_5385",
+    "IMG_5386"
+  ],
+  "map": "visual_map_v4_low_rotation",
+  "retrieval": "legacy",
+  "calibration": "Same EXIF estimates as the primary exploratory diagnostic.",
+  "geometric_thresholds": "unchanged",
+  "fresh_held_out_claim": false
+}

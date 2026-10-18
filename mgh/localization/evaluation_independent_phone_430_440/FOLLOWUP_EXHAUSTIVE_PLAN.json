@@ -1,0 +1,6 @@
+{
+  "image_sha256": "742bca4190bf906003664c5c9e82f330dced094c6ff13d14b4c72efe4a777fc6",
+  "reason": "Both predeclared retrieval methods yielded only one consistent reference for the independent 440 photo.",
+  "test": "Match all 125 v3 references with unchanged matcher, PnP and two-reference rules; diagnostic follow-up, not fresh held-out validation.",
+  "calibration": "Same EXIF estimate as primary diagnostic; no metric accuracy or app-ready pose claim."
+}

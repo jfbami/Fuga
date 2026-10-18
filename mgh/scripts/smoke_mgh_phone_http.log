@@ -1,0 +1,12 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+127.0.0.1 - - [17/Oct/2026 21:34:06] "POST /localize HTTP/1.1" 200 -
+{
+  "request_id": "independent-430-http-smoke",
+  "geometric_consensus_accepted": true,
+  "pose_usable_for_app": false,
+  "consistent_support_frames": [
+    10081,
+    9451
+  ]
+}

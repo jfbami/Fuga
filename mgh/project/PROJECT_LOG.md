@@ -4,6 +4,8 @@ Last updated: 2026-10-17. This is a working summary of the conversation and the 
 
 **Important correction, 2026-10-17:** the initial DISK/LightGlue 0/20 run was invalidated by a processing bug: random video seeking returned RGB frames different from the requested pose/depth index. The v1 map and numbers remain historical diagnostics, not evidence of the scan's achievable accuracy. A sequentially indexed v2 map and rerun supersede them; see the final activity entry and `localization/evaluation_v2_framefix/FRAME_FIX_REPORT.md`. Legacy staircase sign filenames are seek-request labels: lower request 610 maps to actual frame 648, upper request 2565 to actual 2728. Source identities remain visible, but the old timestamp/pose bindings were not correct.
 
+**Current evaluation update, 2026-10-17:** v3/A 2/20 accepted (2 within internal tolerance, 0 >2 m); v3/B 2/20 accepted (2 within internal tolerance, 0 >2 m); v4/B 5/20 accepted (5 within internal tolerance, 0 >2 m). See `localization/evaluation_v3_v4_comparison/EVALUATION_REPORT.md`. This supersedes the historical 'not yet evaluated' state below; no independent-phone or routing pass.
+
 ## 1. Goal and current scope
 
 Build a growing digital representation of Mary Gates Hall (MGH), University of Washington, that eventually supports ordinary-phone indoor wayfinding. A user should be able to ask, for example, "Take me to room 416," have the app determine their position and orientation, and receive directions to a reviewed entrance.
@@ -79,7 +81,7 @@ Local CPU processing has already produced the geometry; compute has not been iso
 | 416 iLounge | User-annotated plan plus newer entrance-context observation | Verified doorway threshold and route connection |
 | 420 Student Services | User-annotated plan plus newer Student Services sign observation | Verified entrance anchor |
 | 430 Computer Classroom | User-annotated plan plus newer classroom sign observation | Identify/verify actual entrance(s) |
-| 440 | Room numeral visibly reviewed in staircase capture | Confirm destination metadata and entrance anchor |
+| 440 Team & Quiet Labs | Staircase numeral plus user-supplied independent signed-door photo IMG_5386 | Reviewed 3D entrance anchor and route connection |
 | iSchool sign / blue poster | Plan label and shared lobby appearance | Reviewed 3D landmark anchor if used for navigation |
 | EXIT | Sign label from annotated plan | Physical exit route/destination and availability not verified |
 | IT Help Desk | Sign sighting in staircase capture | Room number and doorway location unknown |
@@ -145,6 +147,10 @@ Independent ordinary-phone photos and reviewed entrance anchors are still needed
 | D013 | Select calibrated scan images by sequential decoded ordinal, never unchecked random seeking | Implementation correction 2026-10-17; exact pixel-hash audit found 13/14 wrong seek indices |
 | D014 | Invalidate and block v1 pose-map use while retaining every original diagnostic | Supersedes treating D012's 0/20 as positioning-performance evidence; correct source observation provenance and rerun without relaxing acceptance |
 | D015 | Map video ordinal i to odometry/depth row via verified timestamp fingerprint (+1 for b9dca4993d); supersede v2 maps | Implementation correction 2026-10-17; v2 numbers retained as diagnostics; thresholds unchanged |
+| D016 | Publish code, docs, audit, and map v3 to public GitHub repo jfbami/Fuga (PR 1); keep master, ZIPs, floor plans private | User decision 2026-10-17 |
+| D017 | Complete predeclared v3 A/B and low-rotation v4 B without changing thresholds or retrieval; reserve fresh data for later variants | User continuation request and implementation choice; B consumed by these two variants |
+| D018 | Feed the existing app arrow/path/proximity-buzz flow with camera-to-map localization; keep existing UI work | User clarification; newer navigation code is on nav/route-guidance, separate map/frame |
+| D019 | Preserve the two iPhone 14 photos as independent queries; gate estimated calibration and keep two-reference checks | User identified 430/440; implementation protocol fixed before matching; later follow-ups are diagnostics |
 
 Future decisions are not pre-approved merely because they appear in the roadmap. Add new IDs when an actual decision is made, identify whether it came from the user or an implementation choice, and record the consequences/evidence. Reversals should supersede earlier entries rather than erase them.
 
@@ -153,9 +159,9 @@ Future decisions are not pre-approved merely because they appear in the roadmap.
 | Step | Current state | Completion evidence |
 |---|---|---|
 | Preserve scans and create measured geometry | Three originals archived; prototypes exist | Checksums/export checks; not global survey accuracy |
-| Build improved single-scan visual reference map | Corrected v2: 125 views / 66,773 confident 3D features | `localization/visual_map_v2/manifest.json`; v1 retained only as invalidated frame-association diagnostics |
-| Run withheld-image diagnostics | v1 0/20 invalidated; corrected v2 accepts 1/20 | Same query ordinals and unchanged acceptance rules; still unreliable, not independent-phone or survey validation |
-| Test independent ordinary-phone images | Pending user capture | 20-30 new views with locations/directions; do not use them as training references |
+| Build improved single-scan visual reference map | v3 association fixed; v4 low-rotation built | Manifests and comparison report; v1/v2 and partial builds remain historical diagnostics |
+| Run withheld-image diagnostics | v3/A 2/20 accepted (2 within internal tolerance, 0 >2 m); v3/B 2/20 accepted (2 within internal tolerance, 0 >2 m); v4/B 5/20 accepted (5 within internal tolerance, 0 >2 m) | Predeclared A/B; thresholds unchanged; same-recording only |
+| Test independent ordinary-phone images | Two original iPhone 14 photos received: 430 and 440; 430 numerical hypothesis, 440 unresolved | EXIF-estimated calibration only; no metric/live-navigation pass; keep photos out of mapping |
 | Verify one destination entrance, initially 416 | Pending physical/image review | Exact threshold anchor plus documented room correspondence |
 | Build a reviewed small navigation graph | Pending | Verified corridor edges, turns, entrance node; no mesh-gap inference |
 | Estimate a stable live phone pose | Pending | Calibrated query and multi-frame agreement; honest failure state |
@@ -249,3 +255,23 @@ All evidence files above are also embedded in the master. Use `MGH_Master_tools.
 - Implementation (D015): `mgh_localizer.py` now verifies the video/odometry offset by timestamp fingerprint at build/evaluate time and indexes maps by odometry row. Legacy v1/v2 maps are refused for querying. Added options `--selection low_rotation`, `--query-ordinals`, and `--query-set-label`.
 - Built `visual_map_v3` (125 views, association fixed, same RGB images as v2). **Not yet evaluated.** `visual_map_v3_interrupted_partial` (session ended) and `visual_map_v4_low_rotation_stopped_partial` (stopped at user request) are preserved incomplete builds, not maps.
 - Paused at user request. Remaining per `EVALUATION_PLAN_v3_v4.json`: evaluate v3 on sets A and B; optionally rebuild and evaluate v4 on set B. Routing stays disabled; independent-phone validation, doorway/stair anchors, and scan registration remain pending.
+- D016 (user decision, 2026-10-17): published code, docs, audit, and `visual_map_v3` (corridor imagery) to the **public** repo `jfbami/Fuga`, branch `mgh-localization`, PR https://github.com/jfbami/Fuga/pull/1, under `mgh/`, to split work with teammates. Excluded: the SQLite master, original scan ZIPs, and all floor plans (NetID-only). This log entry was written after master revision 7 and is not yet embedded in the master.
+
+### 2026-10-17 — Continued predeclared v3/v4 evaluation and prepared team handoff update
+
+- Resumed at the user's request; inspected revision 7/current records, D015/D016 and the audit before running.
+- D017: v3/A 2/20 accepted (2 within internal tolerance, 0 >2 m); v3/B 2/20 accepted (2 within internal tolerance, 0 >2 m); v4/B 5/20 accepted (5 within internal tolerance, 0 >2 m). All three runs completed all 20 declared queries; no threshold or retrieval change. Full results, query images, manifests, comparison checks and logs are preserved. v4 was rebuilt into a new directory; stopped partials are untouched.
+- Set A is audit-exposed diagnostic data. Set B is now consumed by the two predeclared variants; future algorithm changes require a new held-out set. Recorded-pose disagreement is internal consistency, not surveyed accuracy or independent-phone validation.
+- The revised log (including D016, previously absent from revision 7), results, maps, continuity documents and structured current records are staged for one canonical-master transaction by `work/archive_mgh_v3_v4.py`. Its post-commit receipt `../MGH_Master_v3_v4_update.json` records revision and full integrity/checksum verification. Original scan checksums and older history are retained.
+- Prepared updated docs/results for existing public PR https://github.com/jfbami/Fuga/pull/1. Publication excludes the master, original ZIPs and floor plans; actual Git push is verified separately after the archive update.
+- Routing remains disabled. Unresolved room/cropped labels, doorway/stair anchors, alignment, floor-3 corridor coverage, unassigned earlier scan and independent-phone validation remain pending. No whole-building rescan requested.
+
+### 2026-10-17 — Tested independent phone photos and prepared existing-app localization interface
+
+- User clarified the app goal: select a destination such as 440; the existing arrow follows the created corridor path and buzzing signals progress. Keep existing GitHub UI work; focus here on location/direction from the mapped 3D representation (D018).
+- Received original IMG_5385.HEIC, user located in front of 430 Computer Classroom; IMG_5386.HEIC, in front of 440. Metadata: iPhone 14 rear wide. Preserved bytes/checksums/provenance and decoded lossless analysis images; never added either photo to mapping (D019). Room 440's sign visibly reads Team & Quiet Labs; its exact 3D doorway threshold is still unverified.
+- 430 obtained consistent two-reference geometric hypotheses with v3/v4. 440 did not; exhaustive matching against all 125 v3 references still yielded one consistent reference. Mutual-NN retrieval was implemented as an option but did not improve these two outcomes. Full primary/follow-up plans and failed candidates are retained in `localization/evaluation_independent_phone_430_440/`.
+- Calibration came only from an explicitly estimated EXIF-based matrix. No surveyed camera locations or known facing angles were provided. Numerical hypotheses are not app-usable poses or an independent-phone accuracy pass. Future tuned variants need new held-out photos.
+- Added `phone_localizer.py`, `serve_phone_localizer.py` and `PHONE_APP_INTERFACE.md` to provide the existing app a concrete image/intrinsics/timestamp-to-scan-pose interface. Six contract tests passed, plus a real model/image HTTP smoke test; its temporary server closed afterward. The arrow/app source was not replaced. No iOS build or live walk ran on this Windows host.
+- Inspected newer `nav/route-guidance` commit d7229ac. It has a separately saved ARWorldMap and plan-meter hallway graph without 440. Those coordinates and doorway assertions are unreviewed external working data relative to this archive, not an approved staircase-scan registration. No implicit merge/scale correction or routing enablement occurred.
+- User offered floor-2/3 plans and new scans; files not yet received at this entry. Preserve originals and add to the same archive when supplied. No whole-building rescan requested. Floor plans and new independent-photo originals stay private; public handoff contains code and text results.

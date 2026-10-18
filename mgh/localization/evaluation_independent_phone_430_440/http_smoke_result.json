@@ -1,0 +1,298 @@
+{
+  "http_status": 200,
+  "result": {
+    "accepted": false,
+    "status": "geometric_hypothesis_requires_verified_calibration",
+    "coordinate_frame_id": "scan:b9dca4993d",
+    "navigation_enabled": false,
+    "references_tested": 10,
+    "consistent_support_frames": [
+      10081,
+      9451
+    ],
+    "appearances": [
+      {
+        "reference_frame": 8191,
+        "matches": 200,
+        "retrieval_votes": 11
+      },
+      {
+        "reference_frame": 10081,
+        "matches": 188,
+        "retrieval_votes": 30
+      },
+      {
+        "reference_frame": 10891,
+        "matches": 167,
+        "retrieval_votes": 9
+      },
+      {
+        "reference_frame": 9901,
+        "matches": 148,
+        "retrieval_votes": 3
+      },
+      {
+        "reference_frame": 10171,
+        "matches": 130,
+        "retrieval_votes": 2
+      },
+      {
+        "reference_frame": 9451,
+        "matches": 129,
+        "retrieval_votes": 7
+      },
+      {
+        "reference_frame": 9631,
+        "matches": 31,
+        "retrieval_votes": 1
+      },
+      {
+        "reference_frame": 5851,
+        "matches": 26,
+        "retrieval_votes": 1
+      },
+      {
+        "reference_frame": 2341,
+        "matches": 13,
+        "retrieval_votes": 1
+      },
+      {
+        "reference_frame": 12961,
+        "matches": 12,
+        "retrieval_votes": 1
+      }
+    ],
+    "candidates": [
+      {
+        "reference_frame": 10081,
+        "reference_capture_seconds": 178.34352154199587,
+        "matches_with_valid_depth": 188,
+        "inliers": 121,
+        "inlier_ratio": 0.6436170212765957,
+        "median_reprojection_px": 1.610284722604681,
+        "inlier_image_area_fraction": 0.11450520902872086,
+        "per_view_accepted": true,
+        "position_scan_m": [
+          26.947108790888958,
+          4.449822536180558,
+          17.315410746177403
+        ],
+        "rotation_world_camera": [
+          [
+            -0.9832310941858203,
+            -0.003380015357013124,
+            0.18233263811600195
+          ],
+          [
+            -0.026534980771696286,
+            -0.9865358336082997,
+            -0.1613782631032534
+          ],
+          [
+            0.18042314214534752,
+            -0.16351031925527978,
+            0.9699030184897028
+          ]
+        ]
+      },
+      {
+        "reference_frame": 8191,
+        "reference_capture_seconds": 142.65814458399836,
+        "matches_with_valid_depth": 178,
+        "inliers": 132,
+        "inlier_ratio": 0.7415730337078652,
+        "median_reprojection_px": 1.324932784995136,
+        "inlier_image_area_fraction": 0.09215820580720901,
+        "per_view_accepted": true,
+        "position_scan_m": [
+          14.58955662625629,
+          4.2509380848306675,
+          18.1748734177984
+        ],
+        "rotation_world_camera": [
+          [
+            -0.9481032877054535,
+            -0.031381565248664804,
+            0.3164101028801924
+          ],
+          [
+            0.010728409827022369,
+            -0.9977083218793414,
+            -0.06680573085665617
+          ],
+          [
+            0.3177814611721294,
+            -0.059944155805652356,
+            0.9462672144378954
+          ]
+        ]
+      },
+      {
+        "reference_frame": 10891,
+        "reference_capture_seconds": 193.16102654199494,
+        "matches_with_valid_depth": 115,
+        "inliers": 58,
+        "inlier_ratio": 0.5043478260869565,
+        "median_reprojection_px": 1.9853836271361258,
+        "inlier_image_area_fraction": 0.023553060367703438,
+        "per_view_accepted": true,
+        "position_scan_m": [
+          36.006093519682864,
+          5.438159725062485,
+          17.09936430102431
+        ],
+        "rotation_world_camera": [
+          [
+            -0.9841592490290351,
+            0.023326920469520215,
+            0.1757453479669218
+          ],
+          [
+            -0.13862196341626631,
+            -0.719225198958144,
+            -0.680807655980922
+          ],
+          [
+            0.11051933681137013,
+            -0.6943853166398515,
+            0.7110657552053452
+          ]
+        ]
+      },
+      {
+        "reference_frame": 9451,
+        "reference_capture_seconds": 166.79286445899925,
+        "matches_with_valid_depth": 96,
+        "inliers": 77,
+        "inlier_ratio": 0.8020833333333334,
+        "median_reprojection_px": 2.1559406265962218,
+        "inlier_image_area_fraction": 0.0959879532456398,
+        "per_view_accepted": true,
+        "position_scan_m": [
+          26.78630557049332,
+          4.386238273139617,
+          17.332431226278626
+        ],
+        "rotation_world_camera": [
+          [
+            -0.9772062396531261,
+            0.019866270877810677,
+            0.21136058398955662
+          ],
+          [
+            -0.05160839568211091,
+            -0.9879752461108919,
+            -0.1457445936123911
+          ],
+          [
+            0.20592362340954387,
+            -0.15333050692387282,
+            0.9664808414905868
+          ]
+        ]
+      },
+      {
+        "reference_frame": 9901,
+        "reference_capture_seconds": 175.1433396249995,
+        "matches_with_valid_depth": 145,
+        "inliers": 54,
+        "inlier_ratio": 0.3724137931034483,
+        "median_reprojection_px": 2.005973386917664,
+        "inlier_image_area_fraction": 0.012460937723517418,
+        "per_view_accepted": true,
+        "position_scan_m": [
+          27.99087389259433,
+          3.7924409768798784,
+          17.90690389853197
+        ],
+        "rotation_world_camera": [
+          [
+            -0.7337282694272453,
+            -0.04175662609872882,
+            0.678158691472837
+          ],
+          [
+            0.11735363662047182,
+            -0.9908974875337707,
+            0.06595675227913335
+          ],
+          [
+            0.6692316120860176,
+            0.127978722356928,
+            0.7319497906336463
+          ]
+        ]
+      },
+      {
+        "reference_frame": 10171,
+        "reference_capture_seconds": 179.8769419589953,
+        "matches_with_valid_depth": 70,
+        "inliers": 35,
+        "inlier_ratio": 0.5,
+        "median_reprojection_px": 2.4234852520638652,
+        "inlier_image_area_fraction": 0.027029622346162796,
+        "per_view_accepted": true,
+        "position_scan_m": [
+          29.34167759287864,
+          3.8273350534779285,
+          17.892548475139698
+        ],
+        "rotation_world_camera": [
+          [
+            -0.7412182534609908,
+            0.07866733339914206,
+            -0.6666385462843464
+          ],
+          [
+            -0.16311403942040673,
+            -0.9844510746734602,
+            0.0651911935634508
+          ],
+          [
+            -0.651144615949634,
+            0.15705900875192588,
+            0.7425248527084237
+          ]
+        ]
+      }
+    ],
+    "runtime_seconds": 7.0789999999997235,
+    "retrieval_method": "legacy",
+    "retrieval_ranking": null,
+    "calibration_status": "exif_estimate",
+    "geometric_consensus_accepted": true,
+    "pose_usable_for_app": false,
+    "ordinary_phone_validation_passed": false,
+    "candidate_position_scan_m": [
+      26.947108790888958,
+      4.449822536180558,
+      17.315410746177403
+    ],
+    "candidate_rotation_world_camera": [
+      [
+        -0.9832310941858203,
+        -0.003380015357013124,
+        0.18233263811600195
+      ],
+      [
+        -0.026534980771696286,
+        -0.9865358336082997,
+        -0.1613782631032534
+      ],
+      [
+        0.18042314214534752,
+        -0.16351031925527978,
+        0.9699030184897028
+      ]
+    ],
+    "request_id": "independent-430-http-smoke",
+    "capture_timestamp": 123.456,
+    "query_image_sha256": "0f37f643310616ba22b32fb44cc1da650e277fc2d85fb7c95c2db27cb415a23d",
+    "map_manifest_sha256": "8b0eea98e756fdf00ea9d82bebe14b059f08d6f9c90878616f1c8535a9585785",
+    "pose_timestamp_meaning": "Pose belongs to capture_timestamp, not response time.",
+    "request_runtime_seconds": 7.390000000000327,
+    "registered_to_building": false,
+    "route_available": false
+  },
+  "server_closed_after_test": true
+}

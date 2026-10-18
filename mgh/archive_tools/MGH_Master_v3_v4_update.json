@@ -1,0 +1,491 @@
+{
+  "revision": 8,
+  "verification": {
+    "integrity_check": "ok",
+    "foreign_key_errors": [],
+    "blob_checksum_errors": [],
+    "blobs_verified": 1361,
+    "embedded_bytes_verified": 2079701983,
+    "passed": true
+  },
+  "inventory": {
+    "format_version": 1,
+    "latest_revision": 8,
+    "assets_current": 1847,
+    "assets_historical_versions": 2151,
+    "embedded_unique_bytes": 2079701983,
+    "records_by_kind": {
+      "alignment": 2,
+      "area": 3,
+      "building": 1,
+      "coordinate_frame": 4,
+      "floor": 2,
+      "floor_connection": 1,
+      "landmark": 8,
+      "measurement": 1,
+      "observation": 16,
+      "project": 1,
+      "room": 7,
+      "scan": 3,
+      "task": 14,
+      "validation": 16
+    },
+    "scans": [
+      {
+        "building_id": "MGH",
+        "capture_span_seconds": 105.85664458300016,
+        "coordinate_frame_id": "scan:b43779c138",
+        "floor": 4,
+        "frame_count": 6037,
+        "geometry_merge_verified": false,
+        "location_review_state": "user_confirmed",
+        "original_asset": "scans/b43779c138/original/iLounge.zip",
+        "original_modalities": [
+          "rgb_video",
+          "depth",
+          "depth_confidence",
+          "camera_poses",
+          "per_frame_intrinsics",
+          "imu"
+        ],
+        "recorded_path_length_m": 56.36607995117809,
+        "scan_id": "b43779c138",
+        "video_association_conclusive": true,
+        "video_association_method": "timestamp-gap fingerprint",
+        "video_row_minus_decoded_ordinal": 1
+      },
+      {
+        "approximate_segments": [
+          {
+            "context": "lower landing / floor 3",
+            "end_seconds": 18,
+            "start_seconds": 0
+          },
+          {
+            "context": "ascending stairs and upper landing",
+            "end_seconds": 48,
+            "start_seconds": 18
+          },
+          {
+            "context": "floor 4 lobby and corridors",
+            "end_seconds": 254.58112374999473,
+            "start_seconds": 48
+          }
+        ],
+        "area_hint": "STAIR 1, floor 3 to floor 4, then upper-floor lobby/corridors",
+        "building_id": "MGH",
+        "capture_span_seconds": 254.58112374999473,
+        "coordinate_frame_id": "scan:b9dca4993d",
+        "depth_confidence_filename_coverage_complete": true,
+        "floor": null,
+        "floors": [
+          3,
+          4
+        ],
+        "frame_count": 14338,
+        "geometry_merge_verified": false,
+        "latest_evaluation_summary_asset": "project/MGH_Project/localization/evaluation_v3_v4_comparison/summary.json",
+        "location_review_state": "visual_reviewed",
+        "location_source": "visual review of floor signs and continuous recording",
+        "ordinary_phone_localization_validated": false,
+        "original_asset": "scans/b9dca4993d/original/MGH Staircase.zip",
+        "reconstruction_asset_prefix": "scans/b9dca4993d/derived/reconstruction",
+        "reconstruction_state": "prototype_complete",
+        "recorded_path_length_m": 161.59150964924982,
+        "scan_id": "b9dca4993d",
+        "segment_boundaries_verified": false,
+        "video_association_conclusive": true,
+        "video_association_method": "timestamp-gap fingerprint + geometric reprojection test",
+        "video_row_minus_decoded_ordinal": 1,
+        "visual_reference_map_asset": "project/MGH_Project/localization/visual_map_v3/manifest.json",
+        "visual_reference_state": "v3_and_v4_evaluated_same_recording_only",
+        "visual_reference_variant_asset": "project/MGH_Project/localization/visual_map_v4_low_rotation/manifest.json"
+      },
+      {
+        "building_id": null,
+        "capture_span_seconds": 32.3691642920021,
+        "coordinate_frame_id": "scan:e1a70b754b",
+        "floor": null,
+        "frame_count": 1943,
+        "geometry_merge_verified": false,
+        "location_review_state": "unassigned",
+        "original_asset": "scans/e1a70b754b/original/e1a70b754b.zip",
+        "original_modalities": [
+          "rgb_video",
+          "depth",
+          "depth_confidence",
+          "camera_poses",
+          "per_frame_intrinsics",
+          "imu"
+        ],
+        "recorded_path_length_m": 33.11887051746945,
+        "scan_id": "e1a70b754b",
+        "video_association_conclusive": false,
+        "video_association_method": "timestamp-gap fingerprint",
+        "video_row_minus_decoded_ordinal": null
+      }
+    ]
+  },
+  "original_scan_checksums_unchanged": true,
+  "original_scan_checksums": {
+    "scans/e1a70b754b/original/e1a70b754b.zip": "f6c957e088ffa9558e155a121d2b175d35b6246dd8a0f725c85891608499a7ce",
+    "scans/b43779c138/original/iLounge.zip": "fd9b50a6b73da106aae87308ac55881dd1224209d2c0d985324a372656130f5c",
+    "scans/b9dca4993d/original/MGH Staircase.zip": "fad8269ab014cf1122ca97c8cedcd7e9baca355d8b0648d4e6a88d4a02b25fb1"
+  },
+  "previous_record_version_counts": {
+    "alignment": 3,
+    "area": 3,
+    "building": 2,
+    "coordinate_frame": 5,
+    "floor": 3,
+    "floor_connection": 3,
+    "landmark": 8,
+    "measurement": 1,
+    "observation": 29,
+    "project": 4,
+    "room": 7,
+    "scan": 9,
+    "task": 18,
+    "validation": 14
+  },
+  "results": {
+    "date_local": "2026-10-17",
+    "scan_id": "b9dca4993d",
+    "evaluation_plan_sha256": "ca3c1213a524bbc5c0d59507098e4133619fd42905f9d3c6373a84793f253f01",
+    "acceptance_thresholds_changed": false,
+    "retrieval_changed": false,
+    "independent_phone_test_passed": false,
+    "navigation_enabled": false,
+    "checks": {
+      "exact_declared_query_sets": true,
+      "query_reference_disjoint": true,
+      "timestamp_exclusion_verified": true,
+      "association_offset_one": true,
+      "implementation_and_manifest_hashes_verified": true,
+      "same_v2_v3_rgb_images_verified_by_sha256": true,
+      "same_original_and_model_weights": true
+    },
+    "runs": [
+      {
+        "test_type": "Withheld images from SAME recording; temporal exclusion >=2s. Not an independent-phone or surveyed accuracy test.",
+        "query_set_label": "A",
+        "query_decoded_video_ordinals": [
+          585,
+          1305,
+          2025,
+          2745,
+          3465,
+          4095,
+          4815,
+          5535,
+          6255,
+          6975,
+          7695,
+          8415,
+          9045,
+          9765,
+          10485,
+          11205,
+          11925,
+          12645,
+          13365,
+          13995
+        ],
+        "feature_extractor": "DISK",
+        "matcher": "LightGlue disk",
+        "map_manifest_sha256": "8b0eea98e756fdf00ea9d82bebe14b059f08d6f9c90878616f1c8535a9585785",
+        "video_frame_selection": "sequential decoded video ordinal + timestamp-fingerprint-verified offset -> odometry/depth row; no CAP_PROP_POS_FRAMES seeking",
+        "video_association": {
+          "verified": true,
+          "row_minus_decoded_ordinal": 1,
+          "decoded_frames": 14337,
+          "odometry_rows": 14338,
+          "odometry_gaps_over_30ms": 936,
+          "gap_agreement": 1.0,
+          "max_residual_seconds": 0.007391874664861575,
+          "method": "CAP_PROP_POS_MSEC after sequential grab vs odometry timestamps; irregular-gap fingerprint"
+        },
+        "implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+        "reference_count": 125,
+        "query_count": 20,
+        "accepted_queries": 2,
+        "accepted_within_0_5m_10degrees_of_recorded_pose": 2,
+        "median_runtime_seconds": 14.788999999999987,
+        "query_depth_used_for_solver": false,
+        "recorded_query_pose_used_for_solver": false,
+        "query_intrinsics_used": true,
+        "temporal_exclusion_seconds": 2,
+        "independent_phone_test_passed": false,
+        "navigation_ready": false,
+        "acceptance_rules": {
+          "min_inliers": 15,
+          "min_ratio": 0.35,
+          "max_median_reprojection_px": 3,
+          "min_image_area_fraction": 0.01,
+          "max_reference_camera_distance_m": 6,
+          "min_consistent_references": 2,
+          "max_pose_spread_m": 0.75,
+          "max_pose_rotation_spread_degrees": 10,
+          "min_support_time_spread_seconds": 0.5
+        },
+        "map_variant": "v3",
+        "map_directory": "visual_map_v3",
+        "results_asset": "evaluation_v3_setA/results.json",
+        "wrong_place_accepted_over_2m": 0,
+        "accepted_ordinals": [
+          2025,
+          3465
+        ],
+        "median_reference_turning_deg_s": 57.09892639344886,
+        "reference_fraction_turning_over_30_deg_s": 0.76,
+        "confident_3d_features": 65708
+      },
+      {
+        "test_type": "Withheld images from SAME recording; temporal exclusion >=2s. Not an independent-phone or surveyed accuracy test.",
+        "query_set_label": "B",
+        "query_decoded_video_ordinals": [
+          225,
+          945,
+          1665,
+          2385,
+          3105,
+          3825,
+          4455,
+          5175,
+          5895,
+          6615,
+          7335,
+          8055,
+          8775,
+          9405,
+          10125,
+          10845,
+          11565,
+          12285,
+          13005,
+          13725
+        ],
+        "feature_extractor": "DISK",
+        "matcher": "LightGlue disk",
+        "map_manifest_sha256": "8b0eea98e756fdf00ea9d82bebe14b059f08d6f9c90878616f1c8535a9585785",
+        "video_frame_selection": "sequential decoded video ordinal + timestamp-fingerprint-verified offset -> odometry/depth row; no CAP_PROP_POS_FRAMES seeking",
+        "video_association": {
+          "verified": true,
+          "row_minus_decoded_ordinal": 1,
+          "decoded_frames": 14337,
+          "odometry_rows": 14338,
+          "odometry_gaps_over_30ms": 936,
+          "gap_agreement": 1.0,
+          "max_residual_seconds": 0.007391874664861575,
+          "method": "CAP_PROP_POS_MSEC after sequential grab vs odometry timestamps; irregular-gap fingerprint"
+        },
+        "implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+        "reference_count": 125,
+        "query_count": 20,
+        "accepted_queries": 2,
+        "accepted_within_0_5m_10degrees_of_recorded_pose": 2,
+        "median_runtime_seconds": 14.343499999999949,
+        "query_depth_used_for_solver": false,
+        "recorded_query_pose_used_for_solver": false,
+        "query_intrinsics_used": true,
+        "temporal_exclusion_seconds": 2,
+        "independent_phone_test_passed": false,
+        "navigation_ready": false,
+        "acceptance_rules": {
+          "min_inliers": 15,
+          "min_ratio": 0.35,
+          "max_median_reprojection_px": 3,
+          "min_image_area_fraction": 0.01,
+          "max_reference_camera_distance_m": 6,
+          "min_consistent_references": 2,
+          "max_pose_spread_m": 0.75,
+          "max_pose_rotation_spread_degrees": 10,
+          "min_support_time_spread_seconds": 0.5
+        },
+        "map_variant": "v3",
+        "map_directory": "visual_map_v3",
+        "results_asset": "evaluation_v3_setB/results.json",
+        "wrong_place_accepted_over_2m": 0,
+        "accepted_ordinals": [
+          225,
+          945
+        ],
+        "median_reference_turning_deg_s": 57.09892639344886,
+        "reference_fraction_turning_over_30_deg_s": 0.76,
+        "confident_3d_features": 65708
+      },
+      {
+        "test_type": "Withheld images from SAME recording; temporal exclusion >=2s. Not an independent-phone or surveyed accuracy test.",
+        "query_set_label": "B",
+        "query_decoded_video_ordinals": [
+          225,
+          945,
+          1665,
+          2385,
+          3105,
+          3825,
+          4455,
+          5175,
+          5895,
+          6615,
+          7335,
+          8055,
+          8775,
+          9405,
+          10125,
+          10845,
+          11565,
+          12285,
+          13005,
+          13725
+        ],
+        "feature_extractor": "DISK",
+        "matcher": "LightGlue disk",
+        "map_manifest_sha256": "e4dccbe1940026d388e692cdd8b2ab0c1221ec78bc11f0f0cc2c94dcb76bcf46",
+        "video_frame_selection": "sequential decoded video ordinal + timestamp-fingerprint-verified offset -> odometry/depth row; no CAP_PROP_POS_FRAMES seeking",
+        "video_association": {
+          "verified": true,
+          "row_minus_decoded_ordinal": 1,
+          "decoded_frames": 14337,
+          "odometry_rows": 14338,
+          "odometry_gaps_over_30ms": 936,
+          "gap_agreement": 1.0,
+          "max_residual_seconds": 0.007391874664861575,
+          "method": "CAP_PROP_POS_MSEC after sequential grab vs odometry timestamps; irregular-gap fingerprint"
+        },
+        "implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+        "reference_count": 146,
+        "query_count": 20,
+        "accepted_queries": 5,
+        "accepted_within_0_5m_10degrees_of_recorded_pose": 5,
+        "median_runtime_seconds": 8.952999999999975,
+        "query_depth_used_for_solver": false,
+        "recorded_query_pose_used_for_solver": false,
+        "query_intrinsics_used": true,
+        "temporal_exclusion_seconds": 2,
+        "independent_phone_test_passed": false,
+        "navigation_ready": false,
+        "acceptance_rules": {
+          "min_inliers": 15,
+          "min_ratio": 0.35,
+          "max_median_reprojection_px": 3,
+          "min_image_area_fraction": 0.01,
+          "max_reference_camera_distance_m": 6,
+          "min_consistent_references": 2,
+          "max_pose_spread_m": 0.75,
+          "max_pose_rotation_spread_degrees": 10,
+          "min_support_time_spread_seconds": 0.5
+        },
+        "map_variant": "v4",
+        "map_directory": "visual_map_v4_low_rotation",
+        "results_asset": "evaluation_v4_setB/results.json",
+        "wrong_place_accepted_over_2m": 0,
+        "accepted_ordinals": [
+          945,
+          2385,
+          4455,
+          5895,
+          13725
+        ],
+        "median_reference_turning_deg_s": 13.79475752314898,
+        "reference_fraction_turning_over_30_deg_s": 0.13013698630136986,
+        "confident_3d_features": 79062
+      }
+    ]
+  },
+  "independent_phone_diagnostics": {
+    "photos_received": 2,
+    "camera": "iPhone 14 rear wide, 5.7mm, 26mm equivalent",
+    "originals_kept_out_of_mapping": true,
+    "independent_phone_validation_passed": false,
+    "verified_calibration_available": false,
+    "surveyed_camera_positions_available": false,
+    "room_labels_used_by_solver": false,
+    "thresholds_changed": false,
+    "runs": [
+      {
+        "image": "IMG_5385",
+        "variant": "v3 / legacy",
+        "results": "IMG_5385_legacy.json",
+        "geometric_consensus_accepted": true,
+        "support_rows": [
+          10081,
+          9451
+        ],
+        "pose_usable_for_app": false
+      },
+      {
+        "image": "IMG_5385",
+        "variant": "v3 / mutual-NN",
+        "results": "IMG_5385_mutual_nn.json",
+        "geometric_consensus_accepted": true,
+        "support_rows": [
+          10081,
+          9451
+        ],
+        "pose_usable_for_app": false
+      },
+      {
+        "image": "IMG_5385",
+        "variant": "v4 / legacy",
+        "results": "IMG_5385_legacy_v4.json",
+        "geometric_consensus_accepted": true,
+        "support_rows": [
+          10054,
+          9839
+        ],
+        "pose_usable_for_app": false
+      },
+      {
+        "image": "IMG_5386",
+        "variant": "v3 / legacy",
+        "results": "IMG_5386_legacy.json",
+        "geometric_consensus_accepted": false,
+        "support_rows": [
+          10891
+        ],
+        "pose_usable_for_app": false
+      },
+      {
+        "image": "IMG_5386",
+        "variant": "v3 / mutual-NN",
+        "results": "IMG_5386_mutual_nn.json",
+        "geometric_consensus_accepted": false,
+        "support_rows": [
+          10891
+        ],
+        "pose_usable_for_app": false
+      },
+      {
+        "image": "IMG_5386",
+        "variant": "v4 / legacy",
+        "results": "IMG_5386_legacy_v4.json",
+        "geometric_consensus_accepted": false,
+        "support_rows": [
+          8201
+        ],
+        "pose_usable_for_app": false
+      }
+    ],
+    "exhaustive_440": {
+      "references_tested": 125,
+      "geometric_consensus_accepted": false,
+      "support_rows": [
+        10891
+      ]
+    },
+    "real_http_smoke": {
+      "status": 200,
+      "frame_identity_echoed": true,
+      "geometric_consensus_accepted": true,
+      "pose_usable_for_app": false,
+      "server_closed_after_test": true
+    },
+    "unit_tests": {
+      "phone_contract": 3,
+      "http_contract": 3,
+      "passed": true
+    },
+    "navigation_enabled": false
+  }
+}

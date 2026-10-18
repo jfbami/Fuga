@@ -19,6 +19,8 @@ The nearby `MGH_Master_tools.py` is a convenience command-line utility. A copy o
 - `MGH_Project/localization/` adds an experimental DISK/LightGlue map with 129 views / 84,043 confident 3D features from the staircase recording. Its stricter two-reference withheld-image test accepted 0/20, so positioning remains unvalidated. This is not a controlled comparison to the earlier SIFT experiment. No route, voice listener, or independent-phone pass is enabled or claimed.
 - **Correction:** the original DISK/LightGlue v1 map and 0/20 positioning result are invalidated diagnostics because random video seeking paired wrong RGB frames with depth/calibration/poses. The corrected sequentially decoded v2 map has 125 views / 66,773 confident features; unchanged checks accepted 1/20 same-recording queries. This is still not reliable navigation or an independent-phone pass. Exact sign-source ordinals 610 -> 648 and 2565 -> 2728 correct legacy seek-request labels; physical sign identities remain observations, not doorway anchors. Old cross-scan registration trials also need a correctly indexed rerun. See `MGH_Project/localization/evaluation_v2_framefix/FRAME_FIX_REPORT.md`.
 
+**Latest association/evaluation update (2026-10-17):** decoded ordinal i pairs with depth/pose row i+1 for staircase and iLounge scans; v2 is superseded. v3/A 2/20 accepted (2 within internal tolerance, 0 >2 m); v3/B 2/20 accepted (2 within internal tolerance, 0 >2 m); v4/B 5/20 accepted (5 within internal tolerance, 0 >2 m). See the embedded `project/MGH_Project/localization/evaluation_v3_v4_comparison/EVALUATION_REPORT.md`. Set B is consumed; independent-phone validation and navigation remain pending.
+
 ## How future uploads are added
 
 1. Embed the original upload unchanged, with its SHA-256 checksum and source provenance.
@@ -72,3 +74,6 @@ An asset import alone does not establish a floor, alignment, or room label: add 
 The organized working folder is `MGH_Project/`. Its `PROJECT_LOG.md` consolidates history, current evidence, actual decisions, and the roadmap; keep it updated during future project work and embed each version under `project/PROJECT_LOG.md`. Camera-recognition code, reference-map experiments, and independent-photo capture instructions live alongside that log. These exports do not replace the canonical database.
 
 Use this archive as the canonical record in future MGH work. Existing loose files are preserved as working copies and exports. Synchronize any new annotation or derivative back into the master before reporting it as saved. The archive retains revision history, but it is still one physical file; a separate user-managed backup protects against loss of that file.
+
+
+Independent phone update: two iPhone 14 originals (430 and 440) are preserved as queries, not map references. 430 gives an exploratory EXIF-calibrated geometric hypothesis; 440 remains unresolved. The app-facing backend and frame/calibration contract are embedded under project/MGH_Project/localization/. Existing arrow/UI work is separate; no reviewed plan-to-staircase transform or verified 440 route is enabled. New floor-2/3 data has been offered but not received.

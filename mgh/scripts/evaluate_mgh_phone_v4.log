@@ -1,0 +1,6 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Running v4 IMG_5385
+{"image": "IMG_5385", "geometric_consensus_accepted": true, "consistent_support_frames": [10054, 9839], "candidate_position_scan_m": [26.859453659471267, 4.2084234410730685, 17.268139920053272]}
+Running v4 IMG_5386
+{"image": "IMG_5386", "geometric_consensus_accepted": false, "consistent_support_frames": [8201], "candidate_position_scan_m": null}

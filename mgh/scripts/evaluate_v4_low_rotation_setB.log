@@ -1,0 +1,85 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Query row 226 (ordinal 225): accepted=False, support=[439], position_disagreement=None
+Query row 946 (ordinal 945): accepted=True, support=[439, 1159], position_disagreement=0.06401534332420192
+Query row 1666 (ordinal 1665): accepted=False, support=[], position_disagreement=None
+Query row 2386 (ordinal 2385): accepted=True, support=[1306, 1182], position_disagreement=0.2145209511630418
+Query row 3106 (ordinal 3105): accepted=False, support=[], position_disagreement=None
+Query row 3826 (ordinal 3825): accepted=False, support=[], position_disagreement=None
+Query row 4456 (ordinal 4455): accepted=True, support=[4941, 3421], position_disagreement=0.02480908936692542
+Query row 5176 (ordinal 5175): accepted=False, support=[], position_disagreement=None
+Query row 5896 (ordinal 5895): accepted=True, support=[6080, 5259], position_disagreement=0.08902150733830687
+Query row 6616 (ordinal 6615): accepted=False, support=[], position_disagreement=None
+Query row 7336 (ordinal 7335): accepted=False, support=[], position_disagreement=None
+Query row 8056 (ordinal 8055): accepted=False, support=[], position_disagreement=None
+Query row 8776 (ordinal 8775): accepted=False, support=[], position_disagreement=None
+Query row 9406 (ordinal 9405): accepted=False, support=[9684], position_disagreement=None
+Query row 10126 (ordinal 10125): accepted=False, support=[9839], position_disagreement=None
+Query row 10846 (ordinal 10845): accepted=False, support=[], position_disagreement=None
+Query row 11566 (ordinal 11565): accepted=False, support=[], position_disagreement=None
+Query row 12286 (ordinal 12285): accepted=False, support=[12833], position_disagreement=None
+Query row 13006 (ordinal 13005): accepted=False, support=[], position_disagreement=None
+Query row 13726 (ordinal 13725): accepted=True, support=[12602, 13252], position_disagreement=0.053386774994055905
+{
+  "test_type": "Withheld images from SAME recording; temporal exclusion >=2s. Not an independent-phone or surveyed accuracy test.",
+  "query_set_label": "B",
+  "query_decoded_video_ordinals": [
+    225,
+    945,
+    1665,
+    2385,
+    3105,
+    3825,
+    4455,
+    5175,
+    5895,
+    6615,
+    7335,
+    8055,
+    8775,
+    9405,
+    10125,
+    10845,
+    11565,
+    12285,
+    13005,
+    13725
+  ],
+  "feature_extractor": "DISK",
+  "matcher": "LightGlue disk",
+  "map_manifest_sha256": "e4dccbe1940026d388e692cdd8b2ab0c1221ec78bc11f0f0cc2c94dcb76bcf46",
+  "video_frame_selection": "sequential decoded video ordinal + timestamp-fingerprint-verified offset -> odometry/depth row; no CAP_PROP_POS_FRAMES seeking",
+  "video_association": {
+    "verified": true,
+    "row_minus_decoded_ordinal": 1,
+    "decoded_frames": 14337,
+    "odometry_rows": 14338,
+    "odometry_gaps_over_30ms": 936,
+    "gap_agreement": 1.0,
+    "max_residual_seconds": 0.007391874664861575,
+    "method": "CAP_PROP_POS_MSEC after sequential grab vs odometry timestamps; irregular-gap fingerprint"
+  },
+  "implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+  "reference_count": 146,
+  "query_count": 20,
+  "accepted_queries": 5,
+  "accepted_within_0_5m_10degrees_of_recorded_pose": 5,
+  "median_runtime_seconds": 8.952999999999975,
+  "query_depth_used_for_solver": false,
+  "recorded_query_pose_used_for_solver": false,
+  "query_intrinsics_used": true,
+  "temporal_exclusion_seconds": 2,
+  "independent_phone_test_passed": false,
+  "navigation_ready": false,
+  "acceptance_rules": {
+    "min_inliers": 15,
+    "min_ratio": 0.35,
+    "max_median_reprojection_px": 3,
+    "min_image_area_fraction": 0.01,
+    "max_reference_camera_distance_m": 6,
+    "min_consistent_references": 2,
+    "max_pose_spread_m": 0.75,
+    "max_pose_rotation_spread_degrees": 10,
+    "min_support_time_spread_seconds": 0.5
+  }
+}

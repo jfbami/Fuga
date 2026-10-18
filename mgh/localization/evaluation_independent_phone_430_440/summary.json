@@ -1,0 +1,95 @@
+{
+  "photos_received": 2,
+  "camera": "iPhone 14 rear wide, 5.7mm, 26mm equivalent",
+  "originals_kept_out_of_mapping": true,
+  "independent_phone_validation_passed": false,
+  "verified_calibration_available": false,
+  "surveyed_camera_positions_available": false,
+  "room_labels_used_by_solver": false,
+  "thresholds_changed": false,
+  "runs": [
+    {
+      "image": "IMG_5385",
+      "variant": "v3 / legacy",
+      "results": "IMG_5385_legacy.json",
+      "geometric_consensus_accepted": true,
+      "support_rows": [
+        10081,
+        9451
+      ],
+      "pose_usable_for_app": false
+    },
+    {
+      "image": "IMG_5385",
+      "variant": "v3 / mutual-NN",
+      "results": "IMG_5385_mutual_nn.json",
+      "geometric_consensus_accepted": true,
+      "support_rows": [
+        10081,
+        9451
+      ],
+      "pose_usable_for_app": false
+    },
+    {
+      "image": "IMG_5385",
+      "variant": "v4 / legacy",
+      "results": "IMG_5385_legacy_v4.json",
+      "geometric_consensus_accepted": true,
+      "support_rows": [
+        10054,
+        9839
+      ],
+      "pose_usable_for_app": false
+    },
+    {
+      "image": "IMG_5386",
+      "variant": "v3 / legacy",
+      "results": "IMG_5386_legacy.json",
+      "geometric_consensus_accepted": false,
+      "support_rows": [
+        10891
+      ],
+      "pose_usable_for_app": false
+    },
+    {
+      "image": "IMG_5386",
+      "variant": "v3 / mutual-NN",
+      "results": "IMG_5386_mutual_nn.json",
+      "geometric_consensus_accepted": false,
+      "support_rows": [
+        10891
+      ],
+      "pose_usable_for_app": false
+    },
+    {
+      "image": "IMG_5386",
+      "variant": "v4 / legacy",
+      "results": "IMG_5386_legacy_v4.json",
+      "geometric_consensus_accepted": false,
+      "support_rows": [
+        8201
+      ],
+      "pose_usable_for_app": false
+    }
+  ],
+  "exhaustive_440": {
+    "references_tested": 125,
+    "geometric_consensus_accepted": false,
+    "support_rows": [
+      10891
+    ]
+  },
+  "real_http_smoke": {
+    "status": 200,
+    "frame_identity_echoed": true,
+    "geometric_consensus_accepted": true,
+    "pose_usable_for_app": false,
+    "server_closed_after_test": true
+  },
+  "unit_tests": {
+    "phone_contract": 3,
+    "http_contract": 3,
+    "passed": true
+  },
+  "navigation_enabled": false
+}

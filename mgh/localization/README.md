@@ -2,7 +2,7 @@
 
 This is a **research-only** visual reference map and command-line localizer for staircase scan `b9dca4993d`. It does not enable navigation, merge scans, or claim a new ordinary phone has been localized successfully.
 
-**Frame-index correction (2026-10-17):** `visual_map_v1/` and its 0/20 evaluation used inaccurate random video seeking, causing RGB/depth/pose misassociation. Preserve them as invalidated diagnostics, not accuracy evidence. The current map is `visual_map_v2/`, selected by sequential decoded ordinal, with a fresh test in `evaluation_v2_framefix/`. The query API rejects legacy maps lacking sequential-index metadata. See `evaluation_v2_framefix/FRAME_FIX_REPORT.md` and `frame_index_diagnostic/results.json`.
+**Current state (2026-10-17):** v3/A 2/20 accepted (2 within internal tolerance, 0 >2 m); v3/B 2/20 accepted (2 within internal tolerance, 0 >2 m); v4/B 5/20 accepted (5 within internal tolerance, 0 >2 m). See `evaluation_v3_v4_comparison/EVALUATION_REPORT.md`. v1 random-seeking and v2 one-frame-offset results remain superseded diagnostics. v3 uses timestamp-verified row=ordinal+1; v4 adds predeclared low-rotation reference selection. Both map schemas use the v3 format identifier. Routing is disabled and independent-phone validation is pending.
 
 ## What it does
 
@@ -25,12 +25,12 @@ $python = '.\work\mgh_localization_env\Scripts\python.exe'
 $tool = 'outputs/MGH_Project/localization/mgh_localizer.py'
 & $python $tool --help
 & $python $tool build --map outputs/MGH_Project/localization/visual_map_v3
-& $python $tool evaluate --map outputs/MGH_Project/localization/visual_map_v2 --output outputs/MGH_Project/localization/evaluation_additional --queries 20
+& $python $tool evaluate --map outputs/MGH_Project/localization/visual_map_v3 --output outputs/MGH_Project/localization/evaluation_additional --queries 20
 & $python $tool query --image PATH_TO_ORIGINAL_PHOTO.jpg --output outputs/MGH_Project/localization/query_001.json
 & $python $tool query --image PATH_TO_ORIGINAL_PHOTO.jpg --intrinsics PATH_TO_INTRINSICS.json --output outputs/MGH_Project/localization/query_002.json
 ```
 
-Choose new map/evaluation/result names for additional runs; the CLI refuses to replace existing completed or partial outputs. The current map is `visual_map_v2/manifest.json`; the first v1 map is retained only as an invalidated diagnostic. Maps and experiment reports are also embedded in the master after processing. Runtime results are generated only when commands are run; no server, mobile camera, or background voice listener is active.
+Choose new map/evaluation/result names for additional runs; the CLI refuses to replace existing completed or partial outputs. The default map is `visual_map_v3/manifest.json`; `visual_map_v4_low_rotation/manifest.json` is the tested selection variant. v1/v2 maps are rejected by the current loader and retained as diagnostics. Maps and experiment reports are also embedded in the master after processing. Runtime results are generated only when commands are run; no server, mobile camera, or background voice listener is active.
 
 Input images are EXIF-orientation-normalized. For a pose query, supply calibration in the normalized image's pixel coordinate system:
 
@@ -57,3 +57,11 @@ Install the pinned dependencies and the included vendor source archive (or the r
 Pretrained weights are embedded under `project/MGH_Project/localization/models/` in the master. For offline inference, export them into the workspace's `work/mgh_model_weights/checkpoints/` using their original filenames; otherwise the upstream libraries fetch those public weights on first use. The requirements lock records transitive runtime versions; the virtual environment itself is not portable or embedded.
 
 Sources: [LightGlue](https://github.com/cvg/LightGlue), [hloc](https://github.com/cvg/Hierarchical-Localization).
+
+
+Predeclared evaluation: pass `--query-ordinals` and `--query-set-label` exactly as listed in `EVALUATION_PLAN_v3_v4.json`. A and B have now been evaluated; do not tune new variants on them. Use fresh held-out data for later changes.
+
+
+## Existing-app camera interface
+
+Use `phone_localizer.py` for explicit query-calibration provenance and optional mutual-NN retrieval, or `serve_phone_localizer.py` for a model-reusing `/localize` backend. See `PHONE_APP_INTERFACE.md` and `evaluation_independent_phone_430_440/PHONE_REPORT.md`. Two independent iPhone 14 photos were tested: 430 gives an exploratory geometric hypothesis; 440 remains unsupported. Estimated calibration is never promoted to an app-usable pose. The app arrow/UI remains in the existing GitHub navigation work.

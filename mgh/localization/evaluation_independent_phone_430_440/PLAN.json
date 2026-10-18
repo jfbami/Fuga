@@ -1,0 +1,46 @@
+{
+  "photo_manifest_sha256": "054a2f727f150144f89a4e80412f402301d5857d1c49993d6b624cbed7161b51",
+  "experiments": [
+    {
+      "image": "IMG_5385",
+      "parameters": {
+        "width": 3024,
+        "height": 4032,
+        "fx": 3028.6630713897507,
+        "fy": 3028.6630713897507,
+        "cx": 1511.5,
+        "cy": 2015.5,
+        "distortion": [],
+        "provenance": "EXIF 35mm equivalent via diagonal crop; centred principal point; no verified calibration or distortion model.",
+        "calibration_status": "exif_estimate"
+      },
+      "image_sha256": "9c66d910328452004725bcfd3c552abb4a1eeb205d5c904b9b648c67deb4884f"
+    },
+    {
+      "image": "IMG_5386",
+      "parameters": {
+        "width": 3024,
+        "height": 4032,
+        "fx": 3028.6630713897507,
+        "fy": 3028.6630713897507,
+        "cx": 1511.5,
+        "cy": 2015.5,
+        "distortion": [],
+        "provenance": "EXIF 35mm equivalent via diagonal crop; centred principal point; no verified calibration or distortion model.",
+        "calibration_status": "exif_estimate"
+      },
+      "image_sha256": "742bca4190bf906003664c5c9e82f330dced094c6ff13d14b4c72efe4a777fc6"
+    }
+  ],
+  "maps": [
+    "visual_map_v3"
+  ],
+  "methods": [
+    "legacy",
+    "mutual_nn"
+  ],
+  "mnn_selection": "top 13 by per-reference exact mutual nearest descriptor count, stable reference-order tie break",
+  "geometry": "unchanged baseline PnP and two-reference consensus; no query depth, room labels or recorded query poses",
+  "estimated_calibration_never_app_usable": true,
+  "no_tuning_on_these_images": true
+}

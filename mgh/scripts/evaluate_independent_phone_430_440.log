@@ -1,0 +1,10 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Running IMG_5385 / legacy
+{"image": "IMG_5385", "retrieval_method": "legacy", "geometric_consensus_accepted": true, "pose_usable_for_app": false, "consistent_support_frames": [10081, 9451], "candidate_position_scan_m": [26.937051104015712, 4.5168306001547815, 17.396047738348713]}
+Running IMG_5385 / mutual_nn
+{"image": "IMG_5385", "retrieval_method": "mutual_nn", "geometric_consensus_accepted": true, "pose_usable_for_app": false, "consistent_support_frames": [10081, 9451], "candidate_position_scan_m": [26.937051104015712, 4.5168306001547815, 17.396047738348713]}
+Running IMG_5386 / legacy
+{"image": "IMG_5386", "retrieval_method": "legacy", "geometric_consensus_accepted": false, "pose_usable_for_app": false, "consistent_support_frames": [10891], "candidate_position_scan_m": null}
+Running IMG_5386 / mutual_nn
+{"image": "IMG_5386", "retrieval_method": "mutual_nn", "geometric_consensus_accepted": false, "pose_usable_for_app": false, "consistent_support_frames": [10891], "candidate_position_scan_m": null}

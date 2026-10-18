@@ -1,0 +1,337 @@
+{
+  "accepted": false,
+  "status": "insufficient_consistent_geometric_support",
+  "coordinate_frame_id": "scan:b9dca4993d",
+  "navigation_enabled": false,
+  "references_tested": 13,
+  "consistent_support_frames": [
+    10891
+  ],
+  "appearances": [
+    {
+      "reference_frame": 8191,
+      "matches": 142,
+      "retrieval_votes": 20
+    },
+    {
+      "reference_frame": 9901,
+      "matches": 126,
+      "retrieval_votes": 3
+    },
+    {
+      "reference_frame": 10891,
+      "matches": 118,
+      "retrieval_votes": 42
+    },
+    {
+      "reference_frame": 7291,
+      "matches": 84,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7651,
+      "matches": 63,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 13141,
+      "matches": 62,
+      "retrieval_votes": 3
+    },
+    {
+      "reference_frame": 14041,
+      "matches": 60,
+      "retrieval_votes": 3
+    },
+    {
+      "reference_frame": 2701,
+      "matches": 20,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8011,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5941,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 631,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2971,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 6211,
+      "matches": 3,
+      "retrieval_votes": 0
+    }
+  ],
+  "candidates": [
+    {
+      "reference_frame": 10891,
+      "reference_capture_seconds": 193.16102654199494,
+      "matches_with_valid_depth": 118,
+      "inliers": 99,
+      "inlier_ratio": 0.8389830508474576,
+      "median_reprojection_px": 1.2910076734900875,
+      "inlier_image_area_fraction": 0.02459147199988365,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        34.78767768489832,
+        4.306409137734704,
+        17.204691703047388
+      ],
+      "rotation_world_camera": [
+        [
+          -0.8608299034268416,
+          -0.07517862670093474,
+          0.5033091013020687
+        ],
+        [
+          0.0270474340102063,
+          -0.9943888733050541,
+          -0.10227025452480612
+        ],
+        [
+          0.5081735074554734,
+          -0.07442407362182343,
+          0.8580330667205874
+        ]
+      ]
+    },
+    {
+      "reference_frame": 8191,
+      "reference_capture_seconds": 142.65814458399836,
+      "matches_with_valid_depth": 142,
+      "inliers": 83,
+      "inlier_ratio": 0.5845070422535211,
+      "median_reprojection_px": 2.1205123272775137,
+      "inlier_image_area_fraction": 0.018720703199505806,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        14.140190188062299,
+        4.589421897181397,
+        19.04565432754773
+      ],
+      "rotation_world_camera": [
+        [
+          -0.5666496050306651,
+          -0.06169376815226967,
+          0.8216459724782719
+        ],
+        [
+          -0.12496556171625192,
+          -0.9792225957242194,
+          -0.15970822273152832
+        ],
+        [
+          0.814427304001734,
+          -0.19317605181361333,
+          0.547166500712691
+        ]
+      ]
+    },
+    {
+      "reference_frame": 14041,
+      "reference_capture_seconds": 249.64751870899636,
+      "matches_with_valid_depth": 53,
+      "inliers": 26,
+      "inlier_ratio": 0.49056603773584906,
+      "median_reprojection_px": 1.939643335100074,
+      "inlier_image_area_fraction": 0.022690430283546448,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        52.1049822638169,
+        4.243753656345142,
+        15.793956157060899
+      ],
+      "rotation_world_camera": [
+        [
+          -0.9916517944311346,
+          -0.024121738306313926,
+          0.1266683083592438
+        ],
+        [
+          0.014210707216688611,
+          -0.9968071109442148,
+          -0.07857251027840176
+        ],
+        [
+          0.1281591760347745,
+          -0.07611652456680942,
+          0.9888283472301744
+        ]
+      ]
+    },
+    {
+      "reference_frame": 9901,
+      "reference_capture_seconds": 175.1433396249995,
+      "matches_with_valid_depth": 126,
+      "inliers": 93,
+      "inlier_ratio": 0.7380952380952381,
+      "median_reprojection_px": 1.7167177696058942,
+      "inlier_image_area_fraction": 0.037470702081918716,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        28.406750877014076,
+        4.345561734974395,
+        18.22183728580879
+      ],
+      "rotation_world_camera": [
+        [
+          -0.5077509221472798,
+          -0.08343176939542865,
+          0.8574544541339411
+        ],
+        [
+          -0.01837746583157459,
+          -0.9940241143312895,
+          -0.10760264345035758
+        ],
+        [
+          0.8613078832845988,
+          -0.07039318137038195,
+          0.5031833961970126
+        ]
+      ]
+    },
+    {
+      "reference_frame": 7651,
+      "reference_capture_seconds": 132.65756779199728,
+      "matches_with_valid_depth": 61,
+      "inliers": 37,
+      "inlier_ratio": 0.6065573770491803,
+      "median_reprojection_px": 1.4474992932097765,
+      "inlier_image_area_fraction": 0.009270832873880863,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        12.7855777960062,
+        4.227250994400257,
+        18.369530753810253
+      ],
+      "rotation_world_camera": [
+        [
+          0.24533203318873775,
+          0.17566451086140866,
+          -0.9533908815985717
+        ],
+        [
+          0.0405758998995963,
+          -0.9844447133901209,
+          -0.1709450280809028
+        ],
+        [
+          -0.9685895879260822,
+          0.0032535983256622714,
+          -0.24864356870652693
+        ]
+      ]
+    },
+    {
+      "reference_frame": 7291,
+      "reference_capture_seconds": 126.07385649999924,
+      "matches_with_valid_depth": 82,
+      "inliers": 29,
+      "inlier_ratio": 0.35365853658536583,
+      "median_reprojection_px": 2.0959222928154824,
+      "inlier_image_area_fraction": 0.0070426431484520435,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        12.623693293820573,
+        3.196513112906692,
+        12.5966046452812
+      ],
+      "rotation_world_camera": [
+        [
+          0.1554783402835257,
+          0.42912531836499684,
+          0.8897628598906673
+        ],
+        [
+          0.14494758265613733,
+          -0.900877536587336,
+          0.4091575031139907
+        ],
+        [
+          0.9771472171504259,
+          0.06535384617964865,
+          -0.20226762174086277
+        ]
+      ]
+    }
+  ],
+  "runtime_seconds": 15.032000000000153,
+  "retrieval_method": "mutual_nn",
+  "retrieval_ranking": [
+    {
+      "reference_frame": 8191,
+      "mutual_nn_count": 133
+    },
+    {
+      "reference_frame": 10891,
+      "mutual_nn_count": 121
+    },
+    {
+      "reference_frame": 9901,
+      "mutual_nn_count": 107
+    },
+    {
+      "reference_frame": 7291,
+      "mutual_nn_count": 77
+    },
+    {
+      "reference_frame": 13141,
+      "mutual_nn_count": 74
+    },
+    {
+      "reference_frame": 7651,
+      "mutual_nn_count": 73
+    },
+    {
+      "reference_frame": 14041,
+      "mutual_nn_count": 68
+    },
+    {
+      "reference_frame": 631,
+      "mutual_nn_count": 64
+    },
+    {
+      "reference_frame": 6211,
+      "mutual_nn_count": 62
+    },
+    {
+      "reference_frame": 2971,
+      "mutual_nn_count": 59
+    },
+    {
+      "reference_frame": 8011,
+      "mutual_nn_count": 59
+    },
+    {
+      "reference_frame": 2701,
+      "mutual_nn_count": 56
+    },
+    {
+      "reference_frame": 5941,
+      "mutual_nn_count": 54
+    }
+  ],
+  "calibration_status": "exif_estimate",
+  "geometric_consensus_accepted": false,
+  "pose_usable_for_app": false,
+  "ordinary_phone_validation_passed": false,
+  "image": "IMG_5386",
+  "query_image_sha256": "742bca4190bf906003664c5c9e82f330dced094c6ff13d14b4c72efe4a777fc6",
+  "map_manifest_sha256": "8b0eea98e756fdf00ea9d82bebe14b059f08d6f9c90878616f1c8535a9585785",
+  "baseline_implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+  "phone_implementation_sha256": "b931ced651374c5c430344976eb651a3f388cecc58e9ab170693860c830fe620",
+  "room_label_used_by_solver": false
+}

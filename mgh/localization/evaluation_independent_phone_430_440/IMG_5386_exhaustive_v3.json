@@ -1,0 +1,1126 @@
+{
+  "accepted": false,
+  "status": "insufficient_consistent_geometric_support",
+  "coordinate_frame_id": "scan:b9dca4993d",
+  "navigation_enabled": false,
+  "references_tested": 125,
+  "consistent_support_frames": [
+    10891
+  ],
+  "appearances": [
+    {
+      "reference_frame": 8191,
+      "matches": 142,
+      "retrieval_votes": 15
+    },
+    {
+      "reference_frame": 9901,
+      "matches": 126,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 10891,
+      "matches": 118,
+      "retrieval_votes": 19
+    },
+    {
+      "reference_frame": 7291,
+      "matches": 84,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 9451,
+      "matches": 81,
+      "retrieval_votes": 2
+    },
+    {
+      "reference_frame": 12781,
+      "matches": 71,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7651,
+      "matches": 63,
+      "retrieval_votes": 2
+    },
+    {
+      "reference_frame": 13141,
+      "matches": 62,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 10081,
+      "matches": 62,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 14041,
+      "matches": 60,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 14311,
+      "matches": 52,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 13771,
+      "matches": 52,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9091,
+      "matches": 44,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8551,
+      "matches": 43,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3601,
+      "matches": 39,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12241,
+      "matches": 37,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8101,
+      "matches": 37,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1,
+      "matches": 36,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9181,
+      "matches": 33,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 10801,
+      "matches": 31,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 14221,
+      "matches": 29,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11341,
+      "matches": 29,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9631,
+      "matches": 29,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9541,
+      "matches": 29,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 13951,
+      "matches": 28,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 361,
+      "matches": 28,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3421,
+      "matches": 27,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12061,
+      "matches": 26,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12961,
+      "matches": 26,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 14131,
+      "matches": 24,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2071,
+      "matches": 24,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8281,
+      "matches": 23,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5671,
+      "matches": 23,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1261,
+      "matches": 23,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5851,
+      "matches": 22,
+      "retrieval_votes": 2
+    },
+    {
+      "reference_frame": 12511,
+      "matches": 22,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 10531,
+      "matches": 22,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9271,
+      "matches": 22,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3961,
+      "matches": 22,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1441,
+      "matches": 22,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9361,
+      "matches": 21,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 6571,
+      "matches": 21,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5761,
+      "matches": 21,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5311,
+      "matches": 20,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2701,
+      "matches": 20,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 10351,
+      "matches": 19,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 13411,
+      "matches": 19,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1801,
+      "matches": 19,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12691,
+      "matches": 18,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11161,
+      "matches": 17,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11251,
+      "matches": 17,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9721,
+      "matches": 16,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7201,
+      "matches": 16,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1081,
+      "matches": 16,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5221,
+      "matches": 15,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4231,
+      "matches": 15,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3871,
+      "matches": 15,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2161,
+      "matches": 15,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1981,
+      "matches": 15,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12871,
+      "matches": 14,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 13321,
+      "matches": 14,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 11611,
+      "matches": 14,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 10441,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9001,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8011,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 6841,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5041,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1531,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 901,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1171,
+      "matches": 13,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 631,
+      "matches": 12,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 12331,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11701,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 10621,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5941,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1621,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 991,
+      "matches": 12,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8911,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 5401,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4771,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2971,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2341,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 811,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 91,
+      "matches": 11,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8371,
+      "matches": 10,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 10171,
+      "matches": 10,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8821,
+      "matches": 10,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2521,
+      "matches": 10,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2431,
+      "matches": 10,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 451,
+      "matches": 10,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11971,
+      "matches": 9,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8641,
+      "matches": 9,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 13051,
+      "matches": 9,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4141,
+      "matches": 9,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12601,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11791,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 11431,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7111,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 6301,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7741,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4411,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7471,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 2251,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 541,
+      "matches": 8,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 12151,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 10981,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7021,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4951,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4321,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4051,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 1351,
+      "matches": 7,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3151,
+      "matches": 6,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3691,
+      "matches": 5,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 3511,
+      "matches": 5,
+      "retrieval_votes": 1
+    },
+    {
+      "reference_frame": 11071,
+      "matches": 5,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 8731,
+      "matches": 5,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 271,
+      "matches": 5,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 9811,
+      "matches": 4,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7921,
+      "matches": 4,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 4681,
+      "matches": 4,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 6391,
+      "matches": 3,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 6211,
+      "matches": 3,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 3061,
+      "matches": 3,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 721,
+      "matches": 1,
+      "retrieval_votes": 0
+    },
+    {
+      "reference_frame": 7831,
+      "matches": 0,
+      "retrieval_votes": 0
+    }
+  ],
+  "candidates": [
+    {
+      "reference_frame": 10891,
+      "reference_capture_seconds": 193.16102654199494,
+      "matches_with_valid_depth": 118,
+      "inliers": 99,
+      "inlier_ratio": 0.8389830508474576,
+      "median_reprojection_px": 1.2910076734900875,
+      "inlier_image_area_fraction": 0.02459147199988365,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        34.78767768489832,
+        4.306409137734704,
+        17.204691703047388
+      ],
+      "rotation_world_camera": [
+        [
+          -0.8608299034268416,
+          -0.07517862670093474,
+          0.5033091013020687
+        ],
+        [
+          0.0270474340102063,
+          -0.9943888733050541,
+          -0.10227025452480612
+        ],
+        [
+          0.5081735074554734,
+          -0.07442407362182343,
+          0.8580330667205874
+        ]
+      ]
+    },
+    {
+      "reference_frame": 8191,
+      "reference_capture_seconds": 142.65814458399836,
+      "matches_with_valid_depth": 142,
+      "inliers": 83,
+      "inlier_ratio": 0.5845070422535211,
+      "median_reprojection_px": 2.1205123272775137,
+      "inlier_image_area_fraction": 0.018720703199505806,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        14.140190188062299,
+        4.589421897181397,
+        19.04565432754773
+      ],
+      "rotation_world_camera": [
+        [
+          -0.5666496050306651,
+          -0.06169376815226967,
+          0.8216459724782719
+        ],
+        [
+          -0.12496556171625192,
+          -0.9792225957242194,
+          -0.15970822273152832
+        ],
+        [
+          0.814427304001734,
+          -0.19317605181361333,
+          0.547166500712691
+        ]
+      ]
+    },
+    {
+      "reference_frame": 9451,
+      "reference_capture_seconds": 166.79286445899925,
+      "matches_with_valid_depth": 63,
+      "inliers": 45,
+      "inlier_ratio": 0.7142857142857143,
+      "median_reprojection_px": 1.7888703022833035,
+      "inlier_image_area_fraction": 0.014562174677848816,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        25.210746164223536,
+        4.456073701538823,
+        18.064039370396053
+      ],
+      "rotation_world_camera": [
+        [
+          -0.7053567252189321,
+          -0.16293485535058053,
+          0.6898725411989589
+        ],
+        [
+          0.043656958710156187,
+          -0.9813622183881688,
+          -0.18714236900400646
+        ],
+        [
+          0.7075068622597266,
+          -0.10188439150398551,
+          0.699323680868351
+        ]
+      ]
+    },
+    {
+      "reference_frame": 7651,
+      "reference_capture_seconds": 132.65756779199728,
+      "matches_with_valid_depth": 61,
+      "inliers": 37,
+      "inlier_ratio": 0.6065573770491803,
+      "median_reprojection_px": 1.4474992932097765,
+      "inlier_image_area_fraction": 0.009270832873880863,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        12.7855777960062,
+        4.227250994400257,
+        18.369530753810253
+      ],
+      "rotation_world_camera": [
+        [
+          0.24533203318873775,
+          0.17566451086140866,
+          -0.9533908815985717
+        ],
+        [
+          0.0405758998995963,
+          -0.9844447133901209,
+          -0.1709450280809028
+        ],
+        [
+          -0.9685895879260822,
+          0.0032535983256622714,
+          -0.24864356870652693
+        ]
+      ]
+    },
+    {
+      "reference_frame": 9901,
+      "reference_capture_seconds": 175.1433396249995,
+      "matches_with_valid_depth": 126,
+      "inliers": 93,
+      "inlier_ratio": 0.7380952380952381,
+      "median_reprojection_px": 1.7167177696058942,
+      "inlier_image_area_fraction": 0.037470702081918716,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        28.406750877014076,
+        4.345561734974395,
+        18.22183728580879
+      ],
+      "rotation_world_camera": [
+        [
+          -0.5077509221472798,
+          -0.08343176939542865,
+          0.8574544541339411
+        ],
+        [
+          -0.01837746583157459,
+          -0.9940241143312895,
+          -0.10760264345035758
+        ],
+        [
+          0.8613078832845988,
+          -0.07039318137038195,
+          0.5031833961970126
+        ]
+      ]
+    },
+    {
+      "reference_frame": 7291,
+      "reference_capture_seconds": 126.07385649999924,
+      "matches_with_valid_depth": 82,
+      "inliers": 29,
+      "inlier_ratio": 0.35365853658536583,
+      "median_reprojection_px": 2.0959222928154824,
+      "inlier_image_area_fraction": 0.0070426431484520435,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        12.623693293820573,
+        3.196513112906692,
+        12.5966046452812
+      ],
+      "rotation_world_camera": [
+        [
+          0.1554783402835257,
+          0.42912531836499684,
+          0.8897628598906673
+        ],
+        [
+          0.14494758265613733,
+          -0.900877536587336,
+          0.4091575031139907
+        ],
+        [
+          0.9771472171504259,
+          0.06535384617964865,
+          -0.20226762174086277
+        ]
+      ]
+    },
+    {
+      "reference_frame": 14041,
+      "reference_capture_seconds": 249.64751870899636,
+      "matches_with_valid_depth": 53,
+      "inliers": 26,
+      "inlier_ratio": 0.49056603773584906,
+      "median_reprojection_px": 1.939643335100074,
+      "inlier_image_area_fraction": 0.022690430283546448,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        52.1049822638169,
+        4.243753656345142,
+        15.793956157060899
+      ],
+      "rotation_world_camera": [
+        [
+          -0.9916517944311346,
+          -0.024121738306313926,
+          0.1266683083592438
+        ],
+        [
+          0.014210707216688611,
+          -0.9968071109442148,
+          -0.07857251027840176
+        ],
+        [
+          0.1281591760347745,
+          -0.07611652456680942,
+          0.9888283472301744
+        ]
+      ]
+    },
+    {
+      "reference_frame": 14311,
+      "reference_capture_seconds": 254.14776658399933,
+      "matches_with_valid_depth": 39,
+      "inliers": 24,
+      "inlier_ratio": 0.6153846153846154,
+      "median_reprojection_px": 2.399567690710893,
+      "inlier_image_area_fraction": 0.0075699868611991405,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        51.1125808854452,
+        3.9558180448315765,
+        15.761925456625091
+      ],
+      "rotation_world_camera": [
+        [
+          0.38118791506150695,
+          0.19260529647442354,
+          -0.9042117966389627
+        ],
+        [
+          0.0751969252335703,
+          -0.9812762294093768,
+          -0.1773200046005327
+        ],
+        [
+          -0.9214343144502912,
+          -0.00040170401479845685,
+          -0.3885339660665542
+        ]
+      ]
+    },
+    {
+      "reference_frame": 11341,
+      "reference_capture_seconds": 201.27815191699483,
+      "matches_with_valid_depth": 16,
+      "inliers": 8,
+      "inlier_ratio": 0.5,
+      "median_reprojection_px": 1.6022866375493576,
+      "inlier_image_area_fraction": 0.008365885354578495,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        40.5583906092047,
+        4.208846215506925,
+        17.214803114972444
+      ],
+      "rotation_world_camera": [
+        [
+          -0.09199318602337858,
+          0.009734918702696486,
+          0.9957120492808753
+        ],
+        [
+          0.11499204858957046,
+          -0.993158274176891,
+          0.02033399112700788
+        ],
+        [
+          0.9890976101914524,
+          0.11636955698047174,
+          0.09024435562253652
+        ]
+      ]
+    },
+    {
+      "reference_frame": 10081,
+      "reference_capture_seconds": 178.34352154199587,
+      "matches_with_valid_depth": 61,
+      "inliers": 32,
+      "inlier_ratio": 0.5245901639344263,
+      "median_reprojection_px": 2.3318627625041417,
+      "inlier_image_area_fraction": 0.020577799528837204,
+      "per_view_accepted": true,
+      "position_scan_m": [
+        28.984110124820354,
+        4.147315507364324,
+        18.249677954602603
+      ],
+      "rotation_world_camera": [
+        [
+          -0.9213050456474954,
+          0.005173367365072137,
+          -0.3888061845374536
+        ],
+        [
+          -0.00014849454637313282,
+          -0.9999160980813279,
+          -0.012952789166125986
+        ],
+        [
+          -0.38884057248933795,
+          -0.011875734415960128,
+          0.9212285146033234
+        ]
+      ]
+    },
+    {
+      "reference_frame": 10801,
+      "reference_capture_seconds": 191.4942656669955,
+      "matches_with_valid_depth": 27,
+      "inliers": 8,
+      "inlier_ratio": 0.2962962962962963,
+      "median_reprojection_px": 2.345944371090485,
+      "inlier_image_area_fraction": 0.004713541828095913,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        36.92170585433529,
+        4.181617531117674,
+        16.129701667645318
+      ],
+      "rotation_world_camera": [
+        [
+          0.6492566483615047,
+          -0.19812890879534226,
+          0.7343097030939687
+        ],
+        [
+          -0.001908878712051143,
+          -0.9658950878111474,
+          -0.2589266991338639
+        ],
+        [
+          0.7605669995078987,
+          0.16670817269067154,
+          -0.6274920114373482
+        ]
+      ]
+    },
+    {
+      "reference_frame": 9541,
+      "reference_capture_seconds": 168.44295849999617,
+      "matches_with_valid_depth": 28,
+      "inliers": 16,
+      "inlier_ratio": 0.5714285714285714,
+      "median_reprojection_px": 1.6364732256648613,
+      "inlier_image_area_fraction": 0.00911783892661333,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        26.363979167842352,
+        3.9815332363589677,
+        18.71143285842321
+      ],
+      "rotation_world_camera": [
+        [
+          -0.6578771170681421,
+          -0.4257386448987065,
+          -0.6212441589889783
+        ],
+        [
+          0.25138261821130614,
+          -0.9017133504513747,
+          0.35173827326434776
+        ],
+        [
+          -0.7099327278688725,
+          0.07523057794254512,
+          0.7002398746451757
+        ]
+      ]
+    },
+    {
+      "reference_frame": 8101,
+      "reference_capture_seconds": 140.97471404200041,
+      "matches_with_valid_depth": 29,
+      "inliers": 19,
+      "inlier_ratio": 0.6551724137931034,
+      "median_reprojection_px": 2.122110230707132,
+      "inlier_image_area_fraction": 0.002716471441090107,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        15.859466618291677,
+        -1.4639757519000793,
+        17.15804100712563
+      ],
+      "rotation_world_camera": [
+        [
+          -0.14888709452281723,
+          -0.7880348923313198,
+          -0.597355540321607
+        ],
+        [
+          0.508992045840112,
+          -0.578990045273908,
+          0.6369439730032896
+        ],
+        [
+          -0.8477969865221574,
+          -0.20921648104794077,
+          0.4873076376395774
+        ]
+      ]
+    },
+    {
+      "reference_frame": 3601,
+      "reference_capture_seconds": 60.053578958999424,
+      "matches_with_valid_depth": 34,
+      "inliers": 18,
+      "inlier_ratio": 0.5294117647058824,
+      "median_reprojection_px": 1.8652524137861124,
+      "inlier_image_area_fraction": 0.005039062350988388,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        9.47695068423384,
+        5.987279077909587,
+        -1.4748938170105177
+      ],
+      "rotation_world_camera": [
+        [
+          0.8358702243789112,
+          0.08170266817628395,
+          -0.5428127135666821
+        ],
+        [
+          -0.27964231893764385,
+          -0.7875450065748772,
+          -0.5491566589582192
+        ],
+        [
+          -0.47235700635845973,
+          0.6108171057132018,
+          -0.6354378977620248
+        ]
+      ]
+    },
+    {
+      "reference_frame": 361,
+      "reference_capture_seconds": 6.017103209000197,
+      "matches_with_valid_depth": 26,
+      "inliers": 9,
+      "inlier_ratio": 0.34615384615384615,
+      "median_reprojection_px": 2.961052710801684,
+      "inlier_image_area_fraction": 0.003823242150247097,
+      "per_view_accepted": false,
+      "position_scan_m": [
+        0.7872761371263071,
+        2.8119321658531717,
+        -0.7611973553071965
+      ],
+      "rotation_world_camera": [
+        [
+          -0.11962532941027326,
+          0.5903874809553802,
+          -0.798205739702894
+        ],
+        [
+          -0.09051541772761804,
+          -0.8071162095411522,
+          -0.5834127042236206
+        ],
+        [
+          -0.988684347866941,
+          0.0024589890369008383,
+          0.14999071189856394
+        ]
+      ]
+    }
+  ],
+  "runtime_seconds": 93.78099999999995,
+  "image": "IMG_5386",
+  "diagnostic": "exhaustive_all_v3_references",
+  "calibration_status": "exif_estimate",
+  "geometric_consensus_accepted": false,
+  "pose_usable_for_app": false,
+  "independent_phone_validation_passed": false
+}

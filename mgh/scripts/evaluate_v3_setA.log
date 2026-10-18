@@ -1,0 +1,85 @@
+C:\Users\jfbaa\Documents\Codex\2026-10-17\hiwhat-was-the-treehacks-or-any-2\work\mgh_localization_env\Lib\site-packages\torch\jit\_script.py:1491: FutureWarning: `torch.jit.script` is deprecated. Please switch to `torch.compile` or `torch.export`.
+  warnings.warn(
+Query row 586 (ordinal 585): accepted=False, support=[], position_disagreement=None
+Query row 1306 (ordinal 1305): accepted=False, support=[1171], position_disagreement=None
+Query row 2026 (ordinal 2025): accepted=True, support=[2161, 1801], position_disagreement=0.06502793044169645
+Query row 2746 (ordinal 2745): accepted=False, support=[], position_disagreement=None
+Query row 3466 (ordinal 3465): accepted=True, support=[4141, 3871, 4951, 4231], position_disagreement=0.055907889256549034
+Query row 4096 (ordinal 4095): accepted=False, support=[], position_disagreement=None
+Query row 4816 (ordinal 4815): accepted=False, support=[3601], position_disagreement=None
+Query row 5536 (ordinal 5535): accepted=False, support=[], position_disagreement=None
+Query row 6256 (ordinal 6255): accepted=False, support=[], position_disagreement=None
+Query row 6976 (ordinal 6975): accepted=False, support=[], position_disagreement=None
+Query row 7696 (ordinal 7695): accepted=False, support=[8101], position_disagreement=None
+Query row 8416 (ordinal 8415): accepted=False, support=[], position_disagreement=None
+Query row 9046 (ordinal 9045): accepted=False, support=[9271], position_disagreement=None
+Query row 9766 (ordinal 9765): accepted=False, support=[10891], position_disagreement=None
+Query row 10486 (ordinal 10485): accepted=False, support=[], position_disagreement=None
+Query row 11206 (ordinal 11205): accepted=False, support=[], position_disagreement=None
+Query row 11926 (ordinal 11925): accepted=False, support=[], position_disagreement=None
+Query row 12646 (ordinal 12645): accepted=False, support=[12961], position_disagreement=None
+Query row 13366 (ordinal 13365): accepted=False, support=[], position_disagreement=None
+Query row 13996 (ordinal 13995): accepted=False, support=[], position_disagreement=None
+{
+  "test_type": "Withheld images from SAME recording; temporal exclusion >=2s. Not an independent-phone or surveyed accuracy test.",
+  "query_set_label": "A",
+  "query_decoded_video_ordinals": [
+    585,
+    1305,
+    2025,
+    2745,
+    3465,
+    4095,
+    4815,
+    5535,
+    6255,
+    6975,
+    7695,
+    8415,
+    9045,
+    9765,
+    10485,
+    11205,
+    11925,
+    12645,
+    13365,
+    13995
+  ],
+  "feature_extractor": "DISK",
+  "matcher": "LightGlue disk",
+  "map_manifest_sha256": "8b0eea98e756fdf00ea9d82bebe14b059f08d6f9c90878616f1c8535a9585785",
+  "video_frame_selection": "sequential decoded video ordinal + timestamp-fingerprint-verified offset -> odometry/depth row; no CAP_PROP_POS_FRAMES seeking",
+  "video_association": {
+    "verified": true,
+    "row_minus_decoded_ordinal": 1,
+    "decoded_frames": 14337,
+    "odometry_rows": 14338,
+    "odometry_gaps_over_30ms": 936,
+    "gap_agreement": 1.0,
+    "max_residual_seconds": 0.007391874664861575,
+    "method": "CAP_PROP_POS_MSEC after sequential grab vs odometry timestamps; irregular-gap fingerprint"
+  },
+  "implementation_sha256": "70432456b88a840b243d61e7a27f206ef85ceb7e3bfd132f1d368ec02033d7a2",
+  "reference_count": 125,
+  "query_count": 20,
+  "accepted_queries": 2,
+  "accepted_within_0_5m_10degrees_of_recorded_pose": 2,
+  "median_runtime_seconds": 14.788999999999987,
+  "query_depth_used_for_solver": false,
+  "recorded_query_pose_used_for_solver": false,
+  "query_intrinsics_used": true,
+  "temporal_exclusion_seconds": 2,
+  "independent_phone_test_passed": false,
+  "navigation_ready": false,
+  "acceptance_rules": {
+    "min_inliers": 15,
+    "min_ratio": 0.35,
+    "max_median_reprojection_px": 3,
+    "min_image_area_fraction": 0.01,
+    "max_reference_camera_distance_m": 6,
+    "min_consistent_references": 2,
+    "max_pose_spread_m": 0.75,
+    "max_pose_rotation_spread_degrees": 10,
+    "min_support_time_spread_seconds": 0.5
+  }
+}
