@@ -1,0 +1,8 @@
+{
+  "reference_projection_roundtrip_passed": true,
+  "maximum_reprojection_px": 0.0011056557080655841,
+  "points_checked": 66773,
+  "legacy_invalid_map_rejected": true,
+  "decoder_method": "sequential decoded frame ordinal; no CAP_PROP_POS_FRAMES seeking",
+  "physical_accuracy_test": false
+}

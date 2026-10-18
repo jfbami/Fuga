@@ -1,0 +1,15 @@
+{
+  "reference_count": 125,
+  "confident_3d_features": 66773,
+  "query_count": 20,
+  "accepted_queries": 1,
+  "accepted_within_0_5m_10degrees_of_recorded_pose": 1,
+  "accepted_outside_internal_tolerance": 0,
+  "median_query_runtime_seconds": 7.108999999999924,
+  "median_position_disagreement_m": 0.07786136190700571,
+  "video_selection": "sequential decoded ordinal",
+  "actual_minimum_temporal_gap_seconds": 2.250124208003399,
+  "original_v1_result_state": "invalidated: RGB/depth/pose index association bug",
+  "navigation_enabled": false,
+  "independent_phone_validation": false
+}

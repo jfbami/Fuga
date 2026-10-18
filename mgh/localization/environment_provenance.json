@@ -1,0 +1,49 @@
+{
+  "upstream": "https://github.com/cvg/LightGlue",
+  "upstream_commit": "eb42fee2d71449efb0aa5c10549752b5d75384d8",
+  "vendored_subset": "vendor/lightglue-disk-subset-eb42fee2d714.zip",
+  "unchanged_source_files": [
+    {
+      "path": "lightglue/disk.py",
+      "sha256": "7be57759f5fd5714c917f99d3f591dd16512aeb26811f0de1d59a4bdaa5041aa"
+    },
+    {
+      "path": "lightglue/lightglue.py",
+      "sha256": "77891cc7ff79aea7b03f310288d12549db6704f4a1ec42b0b3364527e31f6546"
+    },
+    {
+      "path": "lightglue/utils.py",
+      "sha256": "f172b3b1399748ed91433d27bd2d2881633f4624e8397bda07c842283ed224aa"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "610b46052c892f43bb448c63b0d6609a3dd24d5c16fe59624f7d047b32a942bb"
+    }
+  ],
+  "modified_packaging_only": [
+    "lightglue/__init__.py",
+    "MGH_VENDOR_README.txt"
+  ],
+  "selected_feature": "DISK",
+  "selected_matcher": "LightGlue disk",
+  "selected_upstream_license": "Apache-2.0; see bundled LICENSE",
+  "commercial_legal_review_completed": false,
+  "training_performed": false,
+  "runtime": "isolated Python 3.12 virtual environment; CPU; no cloud inference or user-photo upload",
+  "pytorch_index": "https://download.pytorch.org/whl/cpu",
+  "other_package_index": "https://pypi.org/simple",
+  "weights": [
+    {
+      "filename": "depth-save.pth",
+      "sha256": "9c2ee4ded238892dfa51569941372601e35e4a74aa6f84ea80053d2ab1c07abe",
+      "bytes": 4375832,
+      "source_url": "https://raw.githubusercontent.com/cvlab-epfl/disk/master/depth-save.pth"
+    },
+    {
+      "filename": "disk_lightglue_v0-1_arxiv.pth",
+      "sha256": "b5b21d47ea24f2c5e501aec9c91b9716e4c8c3429a4dc1e615c133c4c9378335",
+      "bytes": 47631405,
+      "source_url": "https://github.com/cvg/LightGlue/releases/download/v0.1_arxiv/disk_lightglue.pth"
+    }
+  ]
+}

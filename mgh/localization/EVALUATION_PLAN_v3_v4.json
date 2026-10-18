@@ -1,0 +1,89 @@
+{
+  "written_utc": "2026-10-18T03:08:39.131113+00:00",
+  "written_before_running": [
+    "visual_map_v3",
+    "visual_map_v4_low_rotation",
+    "evaluation_v3_setA",
+    "evaluation_v3_setB",
+    "evaluation_v4_setA",
+    "evaluation_v4_setB"
+  ],
+  "audit_plan_sha256": "e53fbca37e68c0dcf62bdc722a4af64f8061f7fb92d690889a89cbf5500bcaed",
+  "maps": {
+    "visual_map_v3": "Bug fix only: decoded ordinal i paired with odometry/depth row i+1 (verified by timestamp fingerprint at build time). Same RGB reference images as v2 (ordinals 0, 90, ...). Retrieval, features, matcher, and acceptance unchanged.",
+    "visual_map_v4_low_rotation": "v3 association plus one design change motivated by the audit: within each 90-frame window choose the frame with the lowest recorded turning speed. Retrieval, features, matcher, and acceptance unchanged."
+  },
+  "query_sets": {
+    "A": {
+      "ordinals": [
+        585,
+        1305,
+        2025,
+        2745,
+        3465,
+        4095,
+        4815,
+        5535,
+        6255,
+        6975,
+        7695,
+        8415,
+        9045,
+        9765,
+        10485,
+        11205,
+        11925,
+        12645,
+        13365,
+        13995
+      ],
+      "role": "diagnostic only (inspected during the audit)"
+    },
+    "B": {
+      "ordinals": [
+        225,
+        945,
+        1665,
+        2385,
+        3105,
+        3825,
+        4455,
+        5175,
+        5895,
+        6615,
+        7335,
+        8055,
+        8775,
+        9405,
+        10125,
+        10845,
+        11565,
+        12285,
+        13005,
+        13725
+      ],
+      "role": "held out from the audit; reported as the primary same-recording comparison"
+    }
+  },
+  "comparisons": [
+    "v3 vs v2 on A isolates the association fix on the audited images",
+    "v3 vs v4 on B tests low-rotation reference selection on unaudited images"
+  ],
+  "limits": [
+    "Set B is evaluated with two map variants; no further variants may be tuned on B. A new held-out set (ideally independent phone photos) is required for any later change.",
+    "Same-recording queries are not independent-phone validation; recorded poses are internal comparisons, not surveyed truth."
+  ],
+  "acceptance_rules_unchanged": {
+    "min_inliers": 15,
+    "min_ratio": 0.35,
+    "max_median_reprojection_px": 3,
+    "min_image_area_fraction": 0.01,
+    "max_reference_camera_distance_m": 6,
+    "min_consistent_references": 2,
+    "max_pose_spread_m": 0.75,
+    "max_pose_rotation_spread_degrees": 10,
+    "min_support_time_spread_seconds": 0.5,
+    "temporal_exclusion_seconds": 2
+  },
+  "retrieval_unchanged": true
+}

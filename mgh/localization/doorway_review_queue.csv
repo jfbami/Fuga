@@ -1,0 +1,7 @@
+destination,identity_state,scan_id,source_decoded_video_ordinal,source_odometry_row,legacy_seek_request_label,evidence,doorway_xyz,anchor_verified,route_enabled,next_review
+416 iLounge,draft,b9dca4993d,7289,7290,7092,iLounge entrance-context sign image,,false,false,Confirm exact entrance threshold and floor-plan correspondence
+420 Student Services,draft,b9dca4993d,8572,8573,8450,Student Services sign image,,false,false,Review sign to actual doorway correspondence
+430 Computer Classroom,draft,b9dca4993d,9858,9859,9808,Computer Classroom sign image,,false,false,Identify entrance or entrances without resolving cropped label by guess
+440,draft,b9dca4993d,10886,10887,10865,Room numeral 440 image,,false,false,Confirm room metadata and entrance threshold
+STAIR 1 floor 3 landing,draft,b9dca4993d,648,649,610,Floor numeral 3 image,,false,false,Review threshold and architectural stair identity on floor-3 plan
+STAIR 1 floor 4 landing,draft,b9dca4993d,2728,2729,2565,STAIR 1 / floor 4 sign image,,false,false,Review threshold and architectural stair identity on floor-4 plan
