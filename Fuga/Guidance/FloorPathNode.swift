@@ -1,31 +1,37 @@
 import ARKit
 import SceneKit
 
-/// The green "GPS line" drawn on the hallway floor in the camera view, from where you are to the
-/// destination. A soft green ribbon with chevrons pointing the way, and bright pulses that travel
-/// along it from your feet toward the room. It fades out ~15 m ahead so it doesn't show through
-/// walls past the next corner.
+/// A solid route line on the floor, Apple Maps style: a green band with a darker outline and
+/// a soft highlight that sweeps from you toward the destination.
+///
+/// Used twice: in the camera view (drawn on the real hallway floor, hidden by real walls where it
+/// turns a corner) and in the 3D building view. Points are top-down (x, y) with y = -z in the scene,
+/// which is both ARKit's top-down frame and the 3D view's plan frame.
 final class FloorPathNode: SCNNode {
-    /// Ribbon width on the floor, meters.
-    var width: Float = 0.45
+    /// Line width, meters.
+    var width: Float
+    /// The line fades out between these distances ahead of you (meters).
+    var fadeStart: Float = 12 { didSet { material.setValue(NSNumber(value: fadeStart), forKey: "fadeStart") } }
+    var fadeEnd: Float = 18 { didSet { material.setValue(NSNumber(value: fadeEnd), forKey: "fadeEnd") } }
 
-    private let material: SCNMaterial = {
+    private let material: SCNMaterial
+    private var smoothedFloorY: Float?
+
+    init(width: Float = 0.5) {
+        self.width = width
         let m = SCNMaterial()
         m.lightingModel = .constant
         m.isDoubleSided = true
         m.blendMode = .alpha
         m.writesToDepthBuffer = false
-        m.readsFromDepthBuffer = false
+        m.readsFromDepthBuffer = true      // walls drawn into the depth buffer hide it
         m.diffuse.contents = UIColor.white
         m.shaderModifiers = [.fragment: FloorPathNode.shader]
-        m.setValue(NSNumber(value: 0), forKey: "startU")
-        return m
-    }()
-
-    private var smoothedFloorY: Float?
-
-    override init() {
+        material = m
         super.init()
+        material.setValue(NSNumber(value: 0), forKey: "startU")
+        material.setValue(NSNumber(value: fadeStart), forKey: "fadeStart")
+        material.setValue(NSNumber(value: fadeEnd), forKey: "fadeEnd")
         renderingOrder = 100
         isHidden = true
     }
@@ -37,11 +43,9 @@ final class FloorPathNode: SCNNode {
         geometry = nil
     }
 
-    /// `path` is the rest of the route in ARKit top-down coordinates (x, -z) with how far along
-    /// the route each point is. The first point is where you are.
-    func update(path: [(point: Vec2, along: Double)], frame: ARFrame) {
+    /// `path`: the rest of the route, first point where you are; `floorY`: height of the floor.
+    func update(path: [PathPoint], floorY: Float) {
         guard path.count >= 2 else { hide(); return }
-        let y = floorHeight(frame) + 0.01
 
         var positions: [SCNVector3] = []
         var uvs: [CGPoint] = []
@@ -50,7 +54,7 @@ final class FloorPathNode: SCNNode {
 
         for i in 0..<path.count {
             let p = path[i].point
-            // Direction of the line at this point (averaged at corners so the ribbon bends cleanly).
+            // Direction at this point, averaged at corners so the band bends cleanly.
             let inDir = i > 0 ? (p - path[i - 1].point) : (path[1].point - p)
             let outDir = i < path.count - 1 ? (path[i + 1].point - p) : inDir
             let a = inDir * (1 / max(inDir.length, 1e-6)), b = outDir * (1 / max(outDir.length, 1e-6))
@@ -58,15 +62,14 @@ final class FloorPathNode: SCNNode {
             if d.length < 1e-3 { d = b }
             d = d * (1 / d.length)
             let normal = Vec2(x: -d.y, y: d.x)
-            // Keep the width constant around corners (miter), capped for very sharp turns.
+            // Same width around corners (miter), capped for very sharp turns.
             let miter = min(1 / max(normal.dot(Vec2(x: -b.y, y: b.x)), 0.5), 2)
             let left = p + normal * (half * miter), right = p - normal * (half * miter)
 
-            positions.append(SCNVector3(Float(left.x), y, Float(-left.y)))
-            positions.append(SCNVector3(Float(right.x), y, Float(-right.y)))
-            let u = CGFloat(path[i].along)
-            uvs.append(CGPoint(x: u, y: 0))
-            uvs.append(CGPoint(x: u, y: 1))
+            positions.append(SCNVector3(Float(left.x), floorY, Float(-left.y)))
+            positions.append(SCNVector3(Float(right.x), floorY, Float(-right.y)))
+            uvs.append(CGPoint(x: path[i].along, y: 0))
+            uvs.append(CGPoint(x: path[i].along, y: 1))
 
             if i < path.count - 1 {
                 let l = UInt16(2 * i), r = l + 1, l2 = l + 2, r2 = l + 3
@@ -83,9 +86,9 @@ final class FloorPathNode: SCNNode {
         isHidden = false
     }
 
-    /// The floor: the lowest horizontal plane ARKit has found well below the phone, or about
-    /// 1.35 m below the phone if it hasn't found one yet. Smoothed so the line doesn't jump.
-    private func floorHeight(_ frame: ARFrame) -> Float {
+    /// The real floor in the camera view: the lowest horizontal plane ARKit has found well below
+    /// the phone, or ~1.35 m below the phone until it finds one. Smoothed so the line doesn't jump.
+    func floorHeight(_ frame: ARFrame) -> Float {
         let cameraY = frame.camera.transform.columns.3.y
         let floors = frame.anchors.compactMap { $0 as? ARPlaneAnchor }
             .filter { $0.alignment == .horizontal }
@@ -100,10 +103,12 @@ final class FloorPathNode: SCNNode {
         return smoothedFloorY!
     }
 
-    /// u = meters along the route, v = 0…1 across the ribbon.
+    /// u = meters along the route, v = 0…1 across the band.
     private static let shader = """
     #pragma arguments
     float startU;
+    float fadeStart;
+    float fadeEnd;
     #pragma transparent
     #pragma body
     float u = _surface.diffuseTexcoord.x;
@@ -111,23 +116,21 @@ final class FloorPathNode: SCNNode {
     float ahead = u - startU;
     float across = abs(v * 2.0 - 1.0);
 
-    // Soft edges.
-    float edge = 1.0 - smoothstep(0.65, 1.0, across);
-    // Chevrons pointing toward the destination, every 0.7 m.
-    float c = fract((u - across * 0.25) / 0.7);
-    float chevron = smoothstep(0.0, 0.04, c) * (1.0 - smoothstep(0.16, 0.22, c));
-    // Pulses travelling from you to the destination: 2 m/s, one every 4 m,
-    // bright at the front with a short tail behind.
-    float w = fract((ahead - scn_frame.time * 2.0) / 4.0);
-    float pulse = smoothstep(0.55, 0.95, w) * (1.0 - smoothstep(0.95, 1.0, w));
-    // Gentle breathing of the whole line.
-    float breathe = 0.85 + 0.15 * sin(scn_frame.time * 3.0);
-    // Start just in front of your feet, fade out ~15 m ahead.
-    float fade = smoothstep(-0.1, 0.5, ahead) * (1.0 - smoothstep(10.0, 15.0, ahead));
+    // Solid green band with a darker green outline.
+    float3 fill = float3(0.204, 0.780, 0.349);
+    float3 rim = float3(0.05, 0.42, 0.16);
+    float outline = smoothstep(0.70, 0.78, across);
+    float3 color = mix(fill, rim, outline);
 
-    float alpha = clamp(edge * fade * (0.25 * breathe + 0.45 * chevron + 0.75 * pulse), 0.0, 1.0);
-    float3 green = float3(0.204, 0.780, 0.349);
-    float3 color = mix(green, float3(0.75, 1.0, 0.8), pulse * 0.6);
+    // A soft lighter sweep travelling from you to the destination (2 m/s, every 6 m).
+    float w = fract((ahead - scn_frame.time * 2.0) / 6.0);
+    float pulse = smoothstep(0.55, 0.92, w) * (1.0 - smoothstep(0.92, 1.0, w)) * (1.0 - outline);
+    color = mix(color, float3(0.78, 1.0, 0.84), pulse * 0.5);
+
+    float alpha = 0.92
+        * (1.0 - smoothstep(0.93, 1.0, across))
+        * smoothstep(-0.1, 0.4, ahead)
+        * (1.0 - smoothstep(fadeStart, fadeEnd, ahead));
     _output.color = float4(color * alpha, alpha);
     """
 }

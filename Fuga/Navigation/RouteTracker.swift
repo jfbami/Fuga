@@ -129,11 +129,11 @@ struct RouteTracker {
     }
 
     /// The rest of the route from a distance along it: points and how far along each one is.
-    func remainingPath(from along: Double) -> [(point: Vec2, along: Double)] {
+    func remainingPath(from along: Double) -> [PathPoint] {
         let s = min(max(0, along), total)
-        var out = [(point(at: s), s)]
+        var out = [PathPoint(point: point(at: s), along: s)]
         for i in 0..<points.count where cumulative[i] > s + 0.05 {
-            out.append((points[i], cumulative[i]))
+            out.append(PathPoint(point: points[i], along: cumulative[i]))
         }
         return out
     }
@@ -174,4 +174,10 @@ struct RouteTracker {
         // Plan angles are counter-clockwise; the arrow wants clockwise-positive.
         return wrap(headingDegrees - targetAngle)
     }
+}
+
+/// A point on a route and how far along the route it is (meters).
+struct PathPoint: Equatable {
+    var point: Vec2
+    var along: Double
 }

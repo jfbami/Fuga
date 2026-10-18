@@ -8,7 +8,14 @@ struct ContentView: View {
     @StateObject private var nav: RouteNavigator
     @State private var here: String?
     @State private var destination: HallwayGraph.Destination?
-    @State private var showMap = true
+    @State private var mapMode: MapMode = .threeD
+    private let walls: BuildingWalls
+
+    enum MapMode { case threeD, flat, hidden
+        var next: MapMode { self == .threeD ? .flat : self == .flat ? .hidden : .threeD }
+        var icon: String { self == .threeD ? "view.3d" : self == .flat ? "map.fill" : "map" }
+        var label: String { self == .threeD ? "3D map. Tap for flat map" : self == .flat ? "Flat map. Tap to hide" : "Map hidden. Tap for 3D map" }
+    }
     @State private var showRepin = false
 
     init() {
@@ -16,6 +23,7 @@ struct ContentView: View {
             fatalError("mgh4_graph.json is missing from the app bundle (Fuga/Maps).")
         }
         _nav = StateObject(wrappedValue: RouteNavigator(graph: graph))
+        walls = BuildingWalls.load(resource: "mgh4_walls") ?? .schematic(from: graph)
     }
 
     private var hereNode: HallwayGraph.Node? { here.flatMap { nav.graph.node($0) } }
@@ -147,14 +155,14 @@ struct ContentView: View {
                         .minimumScaleFactor(0.7)
                 }
                 Spacer()
-                Button { showMap.toggle() } label: {
-                    Image(systemName: showMap ? "map.fill" : "map")
+                Button { mapMode = mapMode.next } label: {
+                    Image(systemName: mapMode.icon)
                         .font(.title3)
                         .foregroundStyle(.white)
                         .padding(10)
                         .background(.ultraThinMaterial, in: Circle())
                 }
-                .accessibilityLabel(showMap ? "Hide map" : "Show map")
+                .accessibilityLabel(mapMode.label)
             }
 
             Text(nav.instruction)
@@ -178,7 +186,15 @@ struct ContentView: View {
                     .padding(.top, 6)
             }
 
-            if showMap {
+            if mapMode == .threeD {
+                Building3DView(graph: nav.graph, walls: walls, path: nav.remainingPlanPath,
+                               position: nav.planPosition, headingDegrees: nav.planHeading)
+                    .frame(height: 230)
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.5), lineWidth: 1))
+                    .padding(.top, 12)
+                    .accessibilityHidden(true)
+            } else if mapMode == .flat {
                 MiniMap(graph: nav.graph, route: nav.route, position: nav.planPosition, headingDegrees: nav.planHeading)
                     .frame(width: 150, height: 190)
                     .frame(maxWidth: .infinity, alignment: .trailing)

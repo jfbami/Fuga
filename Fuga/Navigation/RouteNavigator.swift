@@ -46,6 +46,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var planHeading: Double = 0
     @Published private(set) var route: Route?
     @Published private(set) var destination: HallwayGraph.Destination?
+    /// The rest of the route, from you to the destination, in plan meters (for the 3D view).
+    @Published private(set) var remainingPlanPath: [PathPoint] = []
 
     let session = ARSession()
     /// The pulsing green line on the floor (added to the camera view's 3D scene).
@@ -88,7 +90,13 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         }
         let config = ARWorldTrackingConfiguration()
         config.worldAlignment = .gravity
-        config.planeDetection = [.horizontal]
+        // Horizontal planes find the floor for the green path; vertical planes (and the LiDAR mesh on
+        // Pro iPhones) are walls, which hide the path where it goes around a corner.
+        config.planeDetection = [.horizontal, .vertical]
+        if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
+            config.sceneReconstruction = .mesh
+            floorPath.fadeEnd = 30   // real walls hide the path, so it can run further
+        }
         session.run(config, options: [.resetTracking, .removeExistingAnchors])
     }
 
@@ -166,6 +174,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         isAligned = false
         findMy.stop()
         floorPath.hide()
+        remainingPlanPath = []
         speech.stopSpeaking(at: .immediate)
         UIApplication.shared.isIdleTimerDisabled = false
     }
@@ -233,9 +242,11 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         distanceRemaining = remaining
 
         // Green line on the floor from you to the destination, in ARKit's coordinates.
-        var floor = tracker.remainingPath(from: along).map { (point: alignment.toAR($0.point), along: $0.along) }
-        if off > 1 { floor.insert((point: pose.position, along: along), at: 0) }
-        floorPath.update(path: floor, frame: frame)
+        var planPath = tracker.remainingPath(from: along)
+        if off > 1 { planPath.insert(PathPoint(point: position, along: along), at: 0) }
+        remainingPlanPath = planPath
+        floorPath.update(path: planPath.map { PathPoint(point: alignment.toAR($0.point), along: $0.along) },
+                         floorY: floorPath.floorHeight(frame) + 0.01)
 
         // The arrow follows the path drawn on the map. Far off it, point straight back to it.
         if off > 3 {
