@@ -2,7 +2,7 @@ import AVFoundation
 import Combine
 import UIKit
 
-/// "Test voice & vibration": plays every sound and vibration the guidance uses, without
+/// "Test voice & vibration": plays every Juno clip and vibration the guidance uses, without
 /// starting navigation (walking guidance stays switched off until the map is verified).
 @MainActor
 final class FeedbackTest: ObservableObject {
@@ -11,9 +11,7 @@ final class FeedbackTest: ObservableObject {
 
     private let voice: VoiceGuidance
     private let findMy = FindMyHaptics()
-    private let speech = AVSpeechSynthesizer()
-    private let light = UIImpactFeedbackGenerator(style: .light)
-    private let heavy = UIImpactFeedbackGenerator(style: .heavy)
+    private let offCourse = OffCourseHapticPlayer()
     private var task: Task<Void, Never>?
 
     init(voice: VoiceGuidance) { self.voice = voice }
@@ -22,7 +20,7 @@ final class FeedbackTest: ObservableObject {
 
     func stop() {
         task?.cancel(); task = nil
-        findMy.stop(); voice.silence(); speech.stopSpeaking(at: .immediate)
+        findMy.stop(); offCourse.stop(); voice.silence()
         running = false; step = ""
     }
 
@@ -42,20 +40,24 @@ final class FeedbackTest: ObservableObject {
         try await Task.sleep(for: .milliseconds(Int(seconds * 1000)))
     }
 
+    /// Waits for the current clip to finish (at most 7 s), plus a short gap.
+    private func waitForVoice() async throws {
+        try await pause(0.3)
+        var waited = 0.3
+        while voice.isSpeaking && waited < 7 { try await pause(0.1); waited += 0.1 }
+        try await pause(0.4)
+    }
+
     private func run() async throws {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
 
-        step = "iPhone voice (used for turns with distances and room names)"
-        speech.speak(AVSpeechUtterance(string: "In 4 meters, turn left."))
-        try await pause(2.5)
-
         var voiceSource = ""
-        for cue in [VoiceCue.ahead, .left, .right, .behind] {
-            step = "ElevenLabs cue: \(cue.text)"
+        for cue in [VoiceCue.starting, .leftSoon, .left, .right, .behind, .ahead] {
+            step = "Juno: \(cue.text)"
             voice.preview(cue)
             voiceSource = voice.status
-            try await pause(2.2)
+            try await waitForVoice()
         }
 
         step = "Find My vibration: snap when you face the right way, then taps 20 m away"
@@ -73,20 +75,18 @@ final class FeedbackTest: ObservableObject {
         step = "Arrival burst"
         findMy.stop()
         findMy.arrived()
-        speech.speak(AVSpeechUtterance(string: "430 Computer Classroom is on your right."))  // iPhone voice: room names
-        try await pause(3)
+        voice.preview(.arrived)
+        try await waitForVoice()
 
         step = "Off-course: light pulses (facing 45° or more away)"
-        light.prepare()
-        for _ in 0..<3 { light.impactOccurred(intensity: 0.4); try await pause(1) }
-        step = "Off-course: heavy pulses (facing 100° or more away)"
-        heavy.prepare()
-        for _ in 0..<4 { heavy.impactOccurred(intensity: 1); try await pause(0.75) }
+        for _ in 0..<3 { offCourse.play(.subtle); try await pause(1) }
+        step = "Off-course: strong pulses (facing 100° or more away)"
+        for _ in 0..<4 { offCourse.play(.strong); try await pause(0.75) }
 
-        let clips = voiceSource == "ElevenLabs voice"
-            ? "ElevenLabs clips played"
-            : "ElevenLabs clips did NOT play (\(voiceSource))"
-        step = "Done. \(clips). Vibration: \(findMy.status)."
+        let clips = voiceSource.hasPrefix("Juno · ElevenLabs")
+            ? "Juno clips played"
+            : "Juno clips did NOT play (\(voiceSource))"
+        step = "Done. \(clips). Find My taps: \(findMy.status). Off-course: \(offCourse.status)."
         try await pause(0.1)
     }
 }

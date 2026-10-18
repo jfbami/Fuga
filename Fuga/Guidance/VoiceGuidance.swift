@@ -5,18 +5,30 @@ import Foundation
 /// Plays ElevenLabs clips generated before shipping; never needs network or an API key.
 @MainActor
 final class VoiceGuidance: ObservableObject {
-    @Published private(set) var isEnabled = false
-    @Published private(set) var status = "Voice off"
+    @Published private(set) var isEnabled = true
+    @Published private(set) var status = "Juno voice on"
     private let synthesizer = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
     private var scheduler = VoiceCueScheduler()
-    /// Direction updates wait until a navigator corner clip has finished.
-    private var turnClipUntil: TimeInterval = 0
+    var isSpeaking: Bool { player?.isPlaying == true || synthesizer.isSpeaking }
+    private var priorityPlayback = false
+
+    /// Route events preempt directional reminders; both use the same Juno player.
+    func announce(_ cue: VoiceCue) {
+        guard isEnabled else { return }
+        priorityPlayback = true
+        speak(cue)
+    }
+
+    func testVoice() {
+        setEnabled(true)
+        announce(.test)
+    }
 
     func setEnabled(_ enabled: Bool) {
         stop()
         isEnabled = enabled
-        status = enabled ? "Voice on" : "Voice off"
+        status = enabled ? "Juno voice on" : "Voice off"
     }
 
     func stop() {
@@ -29,12 +41,13 @@ final class VoiceGuidance: ObservableObject {
         if player != nil { player?.stop(); player = nil }
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         scheduler = VoiceCueScheduler()
-        turnClipUntil = 0
+        priorityPlayback = false
     }
 
     func update(bearing: Double, distance: Double) {
         guard isEnabled else { return }
-        guard ProcessInfo.processInfo.systemUptime >= turnClipUntil else { return }
+        if priorityPlayback && isSpeaking { return }
+        priorityPlayback = false
         guard let cue = VoiceCue.resolve(bearing: bearing, distance: distance) else {
             stop()
             return
@@ -45,12 +58,6 @@ final class VoiceGuidance: ObservableObject {
 
     /// Plays one cue right away, even when cues are turned off (used by the feedback test).
     func preview(_ cue: VoiceCue) { speak(cue) }
-
-    /// Plays the navigator's corner clip; the 4-per-second direction updates don't cut it off.
-    func playTurn(_ cue: VoiceCue) {
-        speak(cue)
-        turnClipUntil = ProcessInfo.processInfo.systemUptime + (player?.duration ?? 2)
-    }
 
     private func speak(_ cue: VoiceCue) {
         player?.stop()
@@ -70,9 +77,13 @@ final class VoiceGuidance: ObservableObject {
         if let url, let audio = try? AVAudioPlayer(contentsOf: url) {
             player = audio
             if audio.play() {
-                status = "ElevenLabs voice"
+                status = "Juno · ElevenLabs"
                 return
             }
+        }
+        if cue == .test {
+            status = "Juno test failed — bundled audio missing or unreadable. Rebuild the app."
+            return
         }
         let utterance = AVSpeechUtterance(string: cue.text)
         utterance.voice = AVSpeechSynthesisVoice(language: "en-US")

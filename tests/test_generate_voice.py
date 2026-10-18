@@ -45,9 +45,9 @@ class GenerationTests(unittest.TestCase):
             return request
 
     def test_generates_all_cues_with_default_voice(self):
-        request = self.run_generator([AudioResponse() for _ in range(5)])
-        self.assertEqual(len(list((self.root / "Fuga/VoiceAudio").glob("*.mp3"))), 5)
-        self.assertEqual(request.call_count, 5)
+        request = self.run_generator([AudioResponse() for _ in range(12)])
+        self.assertEqual(len(list((self.root / "Fuga/VoiceAudio").glob("*.mp3"))), 12)
+        self.assertEqual(request.call_count, 12)
         self.assertIn("3T3dPoABJjGZZAI1eif7", request.call_args.args[0].full_url)
 
     def test_failed_request_preserves_existing_audio(self):

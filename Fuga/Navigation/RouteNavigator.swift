@@ -28,6 +28,7 @@ struct PlanAlignment {
 /// direction on the plan. ARKit follows every step from there; walking straight down a
 /// hallway corrects any error in the starting direction, and you can re-pin at any
 /// landmark you pass.
+@MainActor
 final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     // Route graph coordinates are not registered to the canonical scan, and no
     // doorway/path anchors are verified. Neither manual nor automatic starts may
@@ -55,11 +56,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
     let session = ARSession()
 
-    /// Plays a bundled ElevenLabs clip (set by the screen). Nil = use the iPhone voice for everything.
-    var playCue: ((VoiceCue) -> Void)?
-
     /// True while a turn instruction or arrival is being spoken (other voice cues wait).
-    var isSpeaking: Bool { speech.isSpeaking }
+    var isSpeaking: Bool { narration.isSpeaking }
     /// The pulsing green line on the floor (added to the camera view's 3D scene).
     let floorPath = FloorPathNode()
     let graph: HallwayGraph
@@ -78,8 +76,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     private var offRouteSince: TimeInterval?
     private var arrivalDoor: Vec2?
 
-    private let speech = AVSpeechSynthesizer()
-    private let notify = UINotificationFeedbackGenerator()
+    let narration = VoiceGuidance()
+    /// Find My–style taps: snap when you face the route, faster taps as you get closer.
     private let findMy = FindMyHaptics()
 
     private let arrivalRadius = 1.5
@@ -88,6 +86,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         self.graph = graph
         super.init()
         session.delegate = self
+        session.delegateQueue = .main
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         // Voice input switches the session to recording, which otherwise mutes vibration.
         try? AVAudioSession.sharedInstance().setAllowHapticsAndSystemSoundsDuringRecording(true)
@@ -155,8 +154,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         } else {
             opening += " Walk \(max(1, Int(t.total.rounded()))) meters."
         }
-        say(opening)
-        instruction = "Turn until the arrow is green, then walk"
+        say(.starting)
+        instruction = opening
     }
 
     /// "I'm next to this landmark right now" during a walk: fixes position drift.
@@ -176,8 +175,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
                 findMy.start()
             }
         }
-        notify.notificationOccurred(.success)
-        say("Got it, you're at \(landmark.landmark ?? landmark.id).")
+        say(.repinned)
     }
 
     func stop() {
@@ -192,7 +190,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         findMy.stop()
         floorPath.hide()
         remainingPlanPath = []
-        speech.stopSpeaking(at: .immediate)
+        narration.stop()
         UIApplication.shared.isIdleTimerDisabled = false
     }
 
@@ -320,13 +318,10 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         if toTurn <= 1.2, !announcedNow.contains(turn.vertex) {
             announcedNow.insert(turn.vertex)
             announcedSoon.insert(turn.vertex)
-            // At the corner, use the ElevenLabs "Turn to your left/right" clip when it's available.
-            if let playCue { playCue(turn.degrees > 0 ? .left : .right) } else {
-                say("\(turn.spokenTurn.capitalizedFirst) now, then walk \(Int(turn.nextStretchMeters.rounded())) meters.")
-            }
+            say(turn.direction == "left" ? .left : .right)
         } else if toTurn <= 4, !announcedSoon.contains(turn.vertex) {
             announcedSoon.insert(turn.vertex)
-            say("In \(max(1, Int(toTurn.rounded()))) meters, \(turn.spokenTurn).")
+            say(turn.direction == "left" ? .leftSoon : .rightSoon)
         }
         instruction = toTurn > 1.2
             ? "In \(max(1, Int(toTurn.rounded()))) m, \(turn.spokenTurn)"
@@ -338,13 +333,13 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             if offRouteSince == nil { offRouteSince = time }
             if !isOffRoute, let since = offRouteSince, time - since > 2 {
                 isOffRoute = true
-                say("You're off the route. Turn until the phone taps, then walk. If you're next to a room, tap I'm at a landmark.")
+                say(.offRoute)
             }
         } else {
             offRouteSince = nil
             if isOffRoute {
                 isOffRoute = false
-                say("Back on the route.")
+                say(.backOnRoute)
             }
         }
     }
@@ -355,7 +350,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         isAligned = false
         distanceRemaining = 0
         instruction = route?.arrivalSentence ?? "You've arrived"
-        say(instruction)
+        say(.arrived)
         findMy.stop()
         findMy.arrived()
         floorPath.hide()
@@ -389,11 +384,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         return d > 0 ? "Turn left" : "Turn right"
     }
 
-    private func say(_ text: String) {
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        speech.stopSpeaking(at: .word)
-        speech.speak(utterance)
+    private func say(_ cue: VoiceCue) {
+        narration.announce(cue)
     }
 
     /// The door of the room the route ends at (routes end on the hallway outside it).
