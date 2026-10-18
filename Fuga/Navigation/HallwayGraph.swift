@@ -18,6 +18,14 @@ struct HallwayGraph: Codable {
             return Vec2(x: doorX, y: doorY)
         }
 
+        /// Measured phone position, directly in front of the door toward the corridor.
+        /// The graph node is the centerline projection, not where the user stands.
+        func standingPoint(distanceFromDoor meters: Double) -> Vec2? {
+            guard meters.isFinite, meters >= 0.2, meters <= 3,
+                  let door, (point - door).length > 0.05 else { return nil }
+            return door + (point - door) * (meters / (point - door).length)
+        }
+
         /// Plan direction you face when standing here looking at the door.
         var facingDoorDegrees: Double? {
             guard let door else { return nil }

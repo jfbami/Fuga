@@ -18,6 +18,8 @@ final class RoutePreview: ObservableObject {
     @Published private(set) var distanceRemaining: Double = 0
     @Published private(set) var summary = ""
     @Published private(set) var offRoute = false
+    /// False until ARKit has found the floor nearby; the line is only drawn on an observed floor.
+    @Published private(set) var floorFound = false
     let floorPath = FloorPathNode()
     private var path: [PathPoint] = []
     private var task: Task<Void, Never>?
@@ -28,7 +30,7 @@ final class RoutePreview: ObservableObject {
     func clear() {
         task?.cancel(); task = nil
         path = []; floorPath.hide()
-        state = .off; summary = ""; offRoute = false
+        state = .off; summary = ""; offRoute = false; floorFound = false
     }
 
     func start(session: ARSession, candidate: QuickLookModel.Candidate, room: String) {
@@ -99,7 +101,13 @@ final class RoutePreview: ObservableObject {
         if let aim = RoutePreviewMath.point(on: path, along: hit.along + 2) {
             relativeBearing = RouteTracker.relativeBearing(from: pose.position, headingDegrees: pose.heading, to: aim)
         }
-        floorPath.update(path: RoutePreviewMath.remaining(from: pose.position, on: path),
-                         floorY: floorPath.floorHeight(frame) + 0.01)
+        // Same rule as the navigator: draw only on a floor ARKit has actually seen.
+        if !offRoute, let floorY = floorPath.floorHeight(frame) {
+            floorFound = true
+            floorPath.update(path: RoutePreviewMath.remaining(from: pose.position, on: path), floorY: floorY + 0.01)
+        } else {
+            floorFound = false
+            floorPath.hide()
+        }
     }
 }

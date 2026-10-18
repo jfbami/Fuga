@@ -13,6 +13,7 @@ final class DestinationVoice: ObservableObject {
     private var recognition: SFSpeechRecognitionTask?
     private var tapInstalled = false
     private var starting = false
+    private var ownsAudioSession = false
     private var generation = UUID()
 
     func start() async {
@@ -39,6 +40,7 @@ final class DestinationVoice: ObservableObject {
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: [.duckOthers])
+            ownsAudioSession = true
             try session.setActive(true)
             let bufferRequest = SFSpeechAudioBufferRecognitionRequest()
             bufferRequest.shouldReportPartialResults = true
@@ -73,8 +75,12 @@ final class DestinationVoice: ObservableObject {
         audio.stop()
         if tapInstalled { audio.inputNode.removeTap(onBus: 0); tapInstalled = false }
         request?.endAudio(); recognition?.cancel(); recognition = nil; request = nil; listening = false
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        // An idle input screen must not deactivate Juno's shared playback session.
+        if ownsAudioSession {
+            ownsAudioSession = false
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        }
     }
 
     static func room(in text: String) -> String? {

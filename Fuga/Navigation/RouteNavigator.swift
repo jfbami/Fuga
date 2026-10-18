@@ -4,41 +4,28 @@ import AVFoundation
 import Combine
 import UIKit
 
-/// How ARKit's world (top-down x, -z) lines up with the floor plan:
-/// plan = planOrigin + rotate(ar - arOrigin, by: rotationDegrees).
-struct PlanAlignment {
-    var arOrigin: Vec2
-    var planOrigin: Vec2
-    var rotationDegrees: Double
-
-    func toPlan(_ ar: Vec2) -> Vec2 {
-        planOrigin + (ar - arOrigin).rotated(byDegrees: rotationDegrees)
-    }
-
-    func toAR(_ plan: Vec2) -> Vec2 {
-        arOrigin + (plan - planOrigin).rotated(byDegrees: -rotationDegrees)
-    }
-}
-
 /// Tracks the phone with ARKit, places it on the floor plan, routes to a destination,
 /// and turns the route into arrow directions, spoken steps and vibration.
 ///
 /// Where you start: you tell the app which landmark you're next to (a room door or the
 /// elevator) and stand in front of it, facing the door. That pins your position and
-/// direction on the plan. ARKit follows every step from there; walking straight down a
-/// hallway corrects any error in the starting direction, and you can re-pin at any
-/// landmark you pass.
+/// direction on the plan using a measured doorway offset. ARKit follows relative
+/// movement without snapping to an assumed corridor. Tracking loss requires recalibration.
 @MainActor
 final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     // Route graph coordinates are not registered to the canonical scan, and no
-    // doorway/path anchors are verified. Neither manual nor automatic starts may
-    // turn on guidance until that work is reviewed.
+    // doorway/path anchors are verified. Automatic/release guidance remains blocked;
+    // a developer build can explicitly opt into a manual test.
     static let guidanceEnabled = false
     enum Phase: Equatable { case idle, navigating, arrived }
 
     // MARK: Published state
 
+    @Published private(set) var startError: String?
+    @Published private(set) var isManualTest = false
     @Published private(set) var phase: Phase = .idle
+    @Published private(set) var guidanceReady = false
+    @Published private(set) var alignmentMessage: String?
     @Published private(set) var trackingReady = false
     @Published private(set) var trackingMessage: String? = "Starting the camera…"
     @Published private(set) var relativeBearing: Double = 0
@@ -66,19 +53,16 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
     private var alignment: PlanAlignment?
     private var tracker: RouteTracker?
-    private var pendingStart: HallwayGraph.Node?
     private var lastUpdate: TimeInterval = 0
     private var lastFrame: (position: Vec2, heading: Double)?
-    private var arHistory: [Vec2] = []
+    private var lastPoseTime: TimeInterval = 0
+    private var cameraStarted = false
 
     private var announcedSoon = Set<Int>()
     private var announcedNow = Set<Int>()
-    private var offRouteSince: TimeInterval?
     private var arrivalDoor: Vec2?
 
     let narration = VoiceGuidance()
-    /// Find My–style taps: snap when you face the route, faster taps as you get closer.
-    private let findMy = FindMyHaptics()
 
     private let arrivalRadius = 1.5
 
@@ -88,8 +72,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         session.delegate = self
         session.delegateQueue = .main
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
-        // Voice input switches the session to recording, which otherwise mutes vibration.
-        try? AVAudioSession.sharedInstance().setAllowHapticsAndSystemSoundsDuringRecording(true)
     }
 
     // MARK: Camera
@@ -108,26 +90,72 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             config.sceneReconstruction = .mesh
             floorPath.fadeEnd = 30   // real walls hide the path, so it can run further
         }
-        session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        if cameraStarted {
+            // Keep the same world frame when returning from another screen.
+            session.run(config)
+        } else {
+            cameraStarted = true
+            lastFrame = nil
+            lastUpdate = 0
+            floorPath.resetFloor()
+            session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        }
     }
 
-    func pauseCamera() { session.pause() }
+    func pauseCamera() {
+        suspendGuidance("Camera paused. Recalibrate at a known doorway.")
+        session.pause()
+    }
+
+    func suspendGuidance(_ message: String) {
+        guidanceReady = false
+        alignmentMessage = message
+        alignment = nil
+        lastFrame = nil
+        isAligned = false
+        planPosition = nil
+        remainingPlanPath = []
+        floorPath.resetFloor()
+        narration.stop()
+    }
+
+    func checkTrackingFreshness() {
+        if phase != .idle, guidanceReady,
+           ProcessInfo.processInfo.systemUptime - lastPoseTime > 0.75 {
+            trackingReady = false
+            suspendGuidance("Camera updates stopped. Recalibrate after tracking recovers.")
+        }
+    }
 
     // MARK: Navigation
 
     /// You're standing in front of `landmark`'s door, facing it. Route to `destination`.
-    func start(at landmark: HallwayGraph.Node, to destination: HallwayGraph.Destination) {
-        guard Self.guidanceEnabled else {
-            instruction = "Guidance is waiting for location and path verification."
+    func start(at landmark: HallwayGraph.Node, to destination: HallwayGraph.Destination, manualTest: Bool = false, doorDistance: Double = 0.5) {
+        startError = nil
+        guard NavigationAccess.permitsStart(verified: Self.guidanceEnabled, manualTest: manualTest) else {
+            startError = "Enable the manual test or wait for map verification."
             return
         }
-        guard let route = graph.route(from: landmark.point, to: destination,
-                                      fromName: landmark.landmark ?? landmark.id) else { return }
-        if let frame = lastFrame, trackingReady {
-            pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: false)
-        } else {
-            pendingStart = landmark
+        guard trackingReady, let frame = lastFrame,
+              ProcessInfo.processInfo.systemUptime - lastPoseTime < 0.75 else {
+            startError = "Wait for camera tracking, then try Start again."
+            return
         }
+        guard let standingPoint = landmark.standingPoint(distanceFromDoor: doorDistance),
+              let facing = landmark.facingDoorDegrees else {
+            startError = "Choose a mapped doorway and enter your measured distance from it."
+            return
+        }
+        guard let route = graph.route(from: standingPoint, to: destination,
+                                      fromName: landmark.landmark ?? landmark.id) else {
+            startError = "No route connects these locations. Choose another destination."
+            return
+        }
+        isManualTest = !Self.guidanceEnabled && manualTest
+        alignment = PlanAlignment(arOrigin: frame.position, planOrigin: standingPoint,
+                                  rotationDegrees: facing - frame.heading)
+        guidanceReady = true
+        alignmentMessage = "Doorway calibration set; map remains unverified."
         self.route = route
         self.destination = destination
         let t = RouteTracker(points: route.points.map { Vec2(x: $0.x, y: $0.y) })
@@ -136,12 +164,10 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         isAligned = false
         announcedSoon.removeAll()
         announcedNow.removeAll()
-        offRouteSince = nil
         isOffRoute = false
         phase = .navigating
         try? AVAudioSession.sharedInstance().setActive(true)
         UIApplication.shared.isIdleTimerDisabled = true
-        findMy.start()
 
         // You start facing the door, so the first instruction is usually to turn around.
         var opening = "Going to \(route.to.name), \(Int(route.lengthMeters.rounded())) meters."
@@ -158,52 +184,22 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         instruction = opening
     }
 
-    /// "I'm next to this landmark right now" during a walk: fixes position drift.
-    /// Keeps the current direction estimate (you don't need to face the door).
-    func repin(at landmark: HallwayGraph.Node) {
-        guard Self.guidanceEnabled else { return }
-        guard let frame = lastFrame, trackingReady else { return }
-        pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: true)
-        if let destination, let newRoute = graph.route(from: landmark.point, to: destination) {
-            route = newRoute
-            tracker = RouteTracker(points: newRoute.points.map { Vec2(x: $0.x, y: $0.y) })
-            arrivalDoor = Self.door(at: newRoute, in: graph)
-            announcedSoon.removeAll()
-            announcedNow.removeAll()
-            if phase == .arrived {
-                phase = .navigating
-                findMy.start()
-            }
-        }
-        say(.repinned)
-    }
-
     func stop() {
+        guidanceReady = false
+        alignmentMessage = nil
+        isManualTest = false
+        startError = nil
         phase = .idle
         route = nil
         tracker = nil
         destination = nil
-        pendingStart = nil
         alignment = nil
         planPosition = nil
         isAligned = false
-        findMy.stop()
         floorPath.hide()
         remainingPlanPath = []
         narration.stop()
         UIApplication.shared.isIdleTimerDisabled = false
-    }
-
-    private func pin(at landmark: HallwayGraph.Node, arPosition: Vec2, arHeading: Double, keepDirection: Bool) {
-        let rotation: Double
-        if keepDirection, let current = alignment {
-            rotation = current.rotationDegrees
-        } else {
-            rotation = (landmark.facingDoorDegrees ?? 0) - arHeading
-        }
-        alignment = PlanAlignment(arOrigin: arPosition, planOrigin: landmark.point, rotationDegrees: rotation)
-        arHistory.removeAll()
-        pendingStart = nil
     }
 
     // MARK: ARSessionDelegate
@@ -213,30 +209,29 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         lastUpdate = frame.timestamp
 
         updateTrackingState(frame.camera.trackingState)
-        guard let pose = Self.topDownPose(frame.camera.transform) else { return }
+        guard trackingReady else {
+            if phase != .idle { suspendGuidance("Tracking lost. Recalibrate at a known doorway.") }
+            lastFrame = nil
+            return
+        }
+        guard let pose = Self.topDownPose(frame.camera.transform) else {
+            lastFrame = nil
+            guidanceReady = false
+            alignmentMessage = "Hold the phone upright, facing the hallway."
+            floorPath.hide()
+            narration.stop()
+            return
+        }
         lastFrame = pose
+        lastPoseTime = ProcessInfo.processInfo.systemUptime
+        guard phase != .idle, let alignment, var tracker else { return }
+        guidanceReady = true
+        alignmentMessage = "Doorway calibration set; map remains unverified."
+        let position = alignment.toPlan(pose.position)
+        let heading = pose.heading + alignment.rotationDegrees
 
-        if let landmark = pendingStart, trackingReady {
-            pin(at: landmark, arPosition: pose.position, arHeading: pose.heading, keepDirection: false)
-        }
-        guard phase != .idle, pendingStart == nil, var alignment, var tracker else { return }
-
-        var position = alignment.toPlan(pose.position)
-        var heading = pose.heading + alignment.rotationDegrees
-
-        // Hallway heading correction: a straight 3 m walk next to a long route segment tells us
-        // which way the hallway really runs (fixes not facing the door squarely at Start).
-        arHistory.append(pose.position)
-        if arHistory.count > 60 { arHistory.removeFirst(arHistory.count - 60) }
-        if let fix = corridorCorrection(arPosition: pose.position, planPosition: position,
-                                        rotation: alignment.rotationDegrees, tracker: tracker) {
-            let pulled = position + (fix.closest - position) * 0.2
-            alignment = PlanAlignment(arOrigin: pose.position, planOrigin: pulled,
-                                      rotationDegrees: alignment.rotationDegrees + 0.3 * fix.delta)
-            self.alignment = alignment
-            position = pulled
-            heading = pose.heading + alignment.rotationDegrees
-        }
+        // Do not snap the measured pose toward the intended route. That hides genuine
+        // lateral errors and can rotate the overlay into an adjacent hallway.
         planPosition = position
         planHeading = heading
 
@@ -257,27 +252,31 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         distanceRemaining = remaining
 
         // Green line on the floor from you to the destination, in ARKit's coordinates.
-        var planPath = tracker.remainingPath(from: along)
-        if off > 1 { planPath.insert(PathPoint(point: position, along: along), at: 0) }
+        let planPath = tracker.remainingPath(from: along)
         remainingPlanPath = planPath
-        floorPath.update(path: planPath.map { PathPoint(point: alignment.toAR($0.point), along: $0.along) },
-                         floorY: floorPath.floorHeight(frame) + 0.01)
-
-        // The arrow follows the path drawn on the map. Far off it, point straight back to it.
-        if off > 3 {
-            relativeBearing = RouteTracker.relativeBearing(from: position, headingDegrees: heading,
-                                                           to: tracker.point(at: along + 1))
+        if off <= 2, let floorY = floorPath.floorHeight(frame) {
+            floorPath.update(path: planPath.map { PathPoint(point: alignment.toAR($0.point), along: $0.along) },
+                             floorY: floorY + 0.01)
         } else {
-            relativeBearing = RouteTracker.wrap(heading - tracker.pathDirection(at: along, position: position))
+            floorPath.hide()
+            alignmentMessage = off > 2
+                ? "Position is away from the mapped corridor. Stop and recalibrate."
+                : "Look toward the floor to place the path."
         }
+        if off > 2 {
+            isOffRoute = true
+            suspendGuidance("Position is away from the mapped corridor. Recalibrate at a doorway.")
+            return
+        }
+
+        relativeBearing = RouteTracker.wrap(heading - tracker.pathDirection(at: along, position: position))
         let error = abs(relativeBearing)
         if isAligned ? error > ExitArrowView.alignedTolerance + 8 : error <= ExitArrowView.alignedTolerance {
             isAligned.toggle()
         }
-        findMy.update(aligned: isAligned, distanceMeters: remaining)
 
-        handleOffRoute(off, time: frame.timestamp)
-        if remaining < arrivalRadius {
+        if remaining < arrivalRadius, off < arrivalRadius,
+           let endpoint = tracker.points.last, (position - endpoint).length < arrivalRadius {
             arrive()
             return
         }
@@ -285,29 +284,23 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func session(_ session: ARSession, didFailWithError error: Error) {
+        trackingReady = false
+        suspendGuidance("Camera tracking failed. Recalibrate after tracking recovers.")
         trackingMessage = "Camera tracking stopped: \(error.localizedDescription)"
     }
 
-    // MARK: Guidance
-
-    private func corridorCorrection(arPosition: Vec2, planPosition: Vec2, rotation: Double,
-                                    tracker: RouteTracker) -> (delta: Double, closest: Vec2)? {
-        guard arHistory.count >= 2 else { return nil }
-        var oldIndex: Int?
-        for i in stride(from: arHistory.count - 2, through: 0, by: -1)
-        where (arPosition - arHistory[i]).length >= 3 {
-            oldIndex = i
-            break
-        }
-        guard let oldIndex else { return nil }
-        let old = arHistory[oldIndex]
-        let chord = arPosition - old
-        let n = chord.length
-        for p in arHistory[oldIndex...] {
-            if abs(chord.x * (p.y - old.y) - chord.y * (p.x - old.x)) / n > 0.4 { return nil }
-        }
-        return tracker.bestParallelSegment(near: planPosition, walkingDegrees: chord.angleDegrees + rotation)
+    func sessionWasInterrupted(_ session: ARSession) {
+        trackingReady = false
+        suspendGuidance("Camera interrupted. Recalibrate at a known doorway.")
     }
+
+    func sessionInterruptionEnded(_ session: ARSession) {
+        trackingReady = false
+        lastFrame = nil
+        trackingMessage = "Recovering camera tracking…"
+    }
+
+    // MARK: Guidance
 
     private func announceTurns(tracker: RouteTracker, along: Double, remaining: Double) {
         guard let turn = tracker.nextTurn(after: along) else {
@@ -328,22 +321,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             : turn.spokenTurn.capitalizedFirst
     }
 
-    private func handleOffRoute(_ off: Double, time: TimeInterval) {
-        if off > 3 {
-            if offRouteSince == nil { offRouteSince = time }
-            if !isOffRoute, let since = offRouteSince, time - since > 2 {
-                isOffRoute = true
-                say(.offRoute)
-            }
-        } else {
-            offRouteSince = nil
-            if isOffRoute {
-                isOffRoute = false
-                say(.backOnRoute)
-            }
-        }
-    }
-
     private func arrive() {
         guard phase == .navigating else { return }
         phase = .arrived
@@ -351,8 +328,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         distanceRemaining = 0
         instruction = route?.arrivalSentence ?? "You've arrived"
         say(.arrived)
-        findMy.stop()
-        findMy.arrived()
         floorPath.hide()
         UIApplication.shared.isIdleTimerDisabled = false
     }
@@ -403,15 +378,12 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     /// Top-down coordinates are (x, -z) so the view isn't mirrored (ARKit's y is up).
     static func topDownPose(_ t: simd_float4x4) -> (position: Vec2, heading: Double)? {
         let position = Vec2(x: Double(t.columns.3.x), y: Double(-t.columns.3.z))
-        // Held upright, the camera looks along -z. Held flat, use the top edge of the phone (ARKit's -x in portrait).
+        // Camera optical forward stays the same axis at every tilt. A nearly vertical
+        // camera has no reliable horizontal heading; do not substitute a different axis.
         let back = t.columns.2
-        var forward = Vec2(x: Double(-back.x), y: Double(back.z))
-        if forward.length < 0.5 {
-            let side = t.columns.0
-            forward = Vec2(x: Double(-side.x), y: Double(side.z))
-        }
-        guard forward.length > 0.1 else { return nil }
-        return (position, forward.angleDegrees)
+        let forward = Vec2(x: Double(-back.x), y: Double(back.z))
+        guard let heading = PlanAlignment.cameraHeading(forward: forward) else { return nil }
+        return (position, heading)
     }
 }
 

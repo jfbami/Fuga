@@ -8,6 +8,7 @@ struct QuickLookView: View {
     var feedbackAction: (() -> Void)? = nil
     var feedbackRunning = false
     var feedbackStep = ""
+    var manualTestAction: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = QuickLookModel()
@@ -76,6 +77,9 @@ struct QuickLookView: View {
                                 } else {
                                     ExitArrowView(relativeBearing: preview.relativeBearing,
                                                   distanceMeters: preview.distanceRemaining, size: 110)
+                                    if !preview.floorFound {
+                                        Text("Tilt the camera toward the floor to draw the route line.").font(.footnote)
+                                    }
                                 }
                             } else if preview.state == .requesting {
                                 ProgressView()
@@ -96,6 +100,18 @@ struct QuickLookView: View {
                         .disabled(voice.listening)
                         if !feedbackStep.isEmpty { Text(feedbackStep) }
                         Text("Plays sample feedback. It does not mean your location has been found.")
+                            .font(.footnote).foregroundStyle(.secondary)
+                    }
+                }
+                if let manualTestAction {
+                    Section("Developer navigation test") {
+                        Button("Manual navigation test") {
+                            model.cancel()
+                            voice.stop()
+                            onCameraWork()
+                            manualTestAction()
+                        }
+                        Text("Test a route from a manually chosen landmark. Map alignment and paths are not yet verified.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
                 }

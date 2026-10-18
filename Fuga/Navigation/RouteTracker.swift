@@ -42,8 +42,8 @@ struct RouteTracker {
     init(points: [Vec2], minTurnDegrees: Double = 25) {
         self.points = points
         var cum: [Double] = [0]
-        for i in 1..<points.count {
-            cum.append(cum[i - 1] + (points[i] - points[i - 1]).length)
+        for (previous, next) in zip(points, points.dropFirst()) {
+            cum.append((cum.last ?? 0) + (next - previous).length)
         }
         cumulative = cum
         total = cum.last ?? 0
@@ -73,6 +73,9 @@ struct RouteTracker {
 
     /// Projects a position onto the route. Returns distance along the route and how far off it you are.
     mutating func project(_ p: Vec2) -> (along: Double, offRoute: Double) {
+        guard points.count >= 2 else {
+            return (0, points.first.map { (p - $0).length } ?? .infinity)
+        }
         func closest(on i: Int) -> (along: Double, dist: Double) {
             let a = points[i], b = points[i + 1]
             let ab = b - a
@@ -81,20 +84,16 @@ struct RouteTracker {
             let q = a + ab * t
             return (cumulative[i] + t * len2.squareRoot(), (p - q).length)
         }
-        // Look near the current segment first so a corridor next to the route can't steal progress.
-        let lo = max(0, segment - 1)
-        let hi = min(points.count - 2, segment + 2)
-        var best = (seg: segment, along: 0.0, dist: Double.infinity)
-        for i in lo...hi {
+        // Only move to an adjacent segment while physically near its shared corner.
+        // Searching ahead by several segments can jump across parallel hallways.
+        let current = closest(on: segment)
+        var best = (seg: segment, along: current.along, dist: current.dist)
+        var candidates: [Int] = []
+        if segment > 0, (p - points[segment]).length <= 1.5 { candidates.append(segment - 1) }
+        if segment < points.count - 2, (p - points[segment + 1]).length <= 1.5 { candidates.append(segment + 1) }
+        for i in candidates {
             let c = closest(on: i)
             if c.dist < best.dist { best = (i, c.along, c.dist) }
-        }
-        // If we're far from the nearby segments, search the whole route.
-        if best.dist > 4 {
-            for i in 0..<(points.count - 1) {
-                let c = closest(on: i)
-                if c.dist < best.dist { best = (i, c.along, c.dist) }
-            }
         }
         segment = best.seg
         return (best.along, best.dist)
@@ -102,6 +101,7 @@ struct RouteTracker {
 
     /// The point a given distance along the route.
     func point(at along: Double) -> Vec2 {
+        guard points.count >= 2 else { return points.first ?? Vec2(x: 0, y: 0) }
         let s = min(max(0, along), total)
         for i in 0..<(points.count - 1) where s <= cumulative[i + 1] {
             let segLen = cumulative[i + 1] - cumulative[i]
@@ -141,30 +141,6 @@ struct RouteTracker {
     /// The next turn ahead of a distance along the route.
     func nextTurn(after along: Double) -> Turn? {
         turns.first { $0.distanceAlong > along - 0.5 }
-    }
-
-    /// The nearby route segment that a straight stretch of walking most likely followed.
-    /// Used to correct the starting heading: hallways are straight, so if you walk 3 m in a
-    /// straight line next to a long route segment, you were walking along it.
-    /// Returns how far (degrees) the walk is turned from that segment and the closest point on it.
-    func bestParallelSegment(near p: Vec2, walkingDegrees: Double,
-                             maxDistance: Double = 7, minLength: Double = 4,
-                             maxDelta: Double = 40) -> (delta: Double, closest: Vec2)? {
-        var best: (delta: Double, closest: Vec2)?
-        for i in 0..<(points.count - 1) {
-            let a = points[i]
-            let ab = points[i + 1] - a
-            let len = ab.length
-            guard len >= minLength else { continue }
-            let t = min(1, max(0, (p - a).dot(ab) / (len * len)))
-            let q = a + ab * t
-            guard (p - q).length <= maxDistance else { continue }
-            let d = RouteTracker.wrap(ab.angleDegrees - walkingDegrees)
-            if abs(d) < maxDelta, best == nil || abs(d) < abs(best!.delta) {
-                best = (d, q)
-            }
-        }
-        return best
     }
 
     /// Bearing for the arrow: degrees from the way the phone faces to the target,

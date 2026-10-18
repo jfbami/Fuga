@@ -11,7 +11,8 @@ struct ContentView: View {
     @State private var showQuickLook = false
     @StateObject private var voice: VoiceGuidance
     @StateObject private var feedbackTest: FeedbackTest
-    @StateObject private var haptics = OffCourseHapticPlayer()
+    @StateObject private var haptics: OffCourseHapticPlayer
+    @State private var showManualTest = false
     @State private var offCourseHaptics = OffCourseHaptics()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -22,7 +23,9 @@ struct ContentView: View {
         let navigator = RouteNavigator(graph: graph)
         _nav = StateObject(wrappedValue: navigator)
         _voice = StateObject(wrappedValue: navigator.narration)
-        _feedbackTest = StateObject(wrappedValue: FeedbackTest(voice: navigator.narration))
+        let hapticPlayer = OffCourseHapticPlayer()
+        _haptics = StateObject(wrappedValue: hapticPlayer)
+        _feedbackTest = StateObject(wrappedValue: FeedbackTest(voice: navigator.narration, haptics: hapticPlayer))
     }
 
     var body: some View {
@@ -48,6 +51,14 @@ struct ContentView: View {
         .sheet(isPresented: $showQuickLook) {
             QuickLookView(session: nav.session, onCameraWork: { feedbackTest.stop() })
         }
+        #if DEBUG
+        .sheet(isPresented: $showManualTest) {
+            ManualNavigationTestView(nav: nav) { landmark, destination, doorDistance in
+                feedbackTest.stop()
+                nav.start(at: landmark, to: destination, manualTest: true, doorDistance: doorDistance)
+            }
+        }
+        #endif
         .task(id: scenePhase) { await runCues() }
         .onDisappear {
             feedbackTest.stop()
@@ -66,17 +77,19 @@ struct ContentView: View {
     private func runCues() async {
         offCourseHaptics.reset()
         guard scenePhase == .active else {
+            if nav.phase != .idle { nav.suspendGuidance("App paused. Recalibrate at a known doorway.") }
             feedbackTest.stop()
             voice.stop()
             haptics.stop()
             return
         }
         while !Task.isCancelled {
+            nav.checkTrackingFreshness()
             if feedbackTest.running {
                 // The idle-screen feedback test owns the shared voice player.
                 // Silencing it every 250 ms would cut off its preview clips.
                 offCourseHaptics.reset()
-            } else if nav.phase == .navigating, nav.trackingReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
+            } else if nav.phase == .navigating, nav.trackingReady, nav.guidanceReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
                 // Don't talk over a spoken turn instruction.
                 // Turn announcements and direction reminders share one Juno player;
                 // update() waits while an announcement is playing.
@@ -104,7 +117,16 @@ struct ContentView: View {
         QuickLookView(session: nav.session, showsCloseButton: false,
                       onCameraWork: { feedbackTest.stop() },
                       feedbackAction: { feedbackTest.toggle() },
-                      feedbackRunning: feedbackTest.running, feedbackStep: feedbackTest.step)
+                      feedbackRunning: feedbackTest.running, feedbackStep: feedbackTest.step,
+                      manualTestAction: manualTestAction)
+    }
+
+    private var manualTestAction: (() -> Void)? {
+        #if DEBUG
+        return { feedbackTest.stop(); showManualTest = true }
+        #else
+        return nil
+        #endif
     }
 
     // MARK: Guidance
@@ -141,6 +163,9 @@ struct ContentView: View {
                 .accessibilityLabel(showMap ? "Hide map" : "Show map")
             }
 
+            if nav.isManualTest {
+                Text("MANUAL TEST · UNVERIFIED MAP").font(.caption.bold()).foregroundStyle(.yellow)
+            }
             Text(nav.instruction)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.white)
@@ -153,7 +178,7 @@ struct ContentView: View {
                 .padding(.top, 2)
 
             if nav.isOffRoute {
-                Label("Off route. Turn until it vibrates.", systemImage: "exclamationmark.triangle.fill")
+                Label("Off route. Stop and check your position.", systemImage: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.yellow)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -176,9 +201,25 @@ struct ContentView: View {
 
             Spacer()
 
-            ExitArrowView(relativeBearing: nav.relativeBearing, distanceMeters: nav.distanceRemaining,
-                          aligned: nav.phase == .arrived ? nil : nav.isAligned)
-                .padding(.bottom, 16)
+            if let message = nav.alignmentMessage {
+                Text(message).foregroundStyle(.yellow).font(.subheadline)
+            }
+            if nav.guidanceReady {
+                ExitArrowView(relativeBearing: nav.relativeBearing, distanceMeters: nav.distanceRemaining,
+                              aligned: nav.phase == .arrived ? nil : nav.isAligned)
+                    .padding(.bottom, 16)
+            } else {
+                Label("Guidance paused — recalibration needed", systemImage: "location.slash")
+                    .foregroundStyle(.yellow).padding(.bottom, 16)
+            }
+            #if DEBUG
+            Button("Recalibrate at a doorway") {
+                feedbackTest.stop()
+                nav.suspendGuidance("Recalibrating at a doorway.")
+                showManualTest = true
+            }
+            .buttonStyle(.bordered)
+            #endif
 
             HStack {
                 Button("End") { nav.stop() }
