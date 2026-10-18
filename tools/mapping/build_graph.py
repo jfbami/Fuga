@@ -3,7 +3,7 @@
 
 Nodes sit on corridor centerlines (measured from the LiDAR walk and the walkable grid);
 door nodes carry the door/sign position so the app can say which side the door is on.
-Checkpoints are spots a mapper can stand at to tie the 3D map to the floor plan.
+Landmarks are doors a person can stand in front of (facing the door) to tell the app where they are.
 
 Usage: python3 build_graph.py data/mgh/04 [--check]   (--check needs grid.png from build_floor.py)
 """
@@ -11,15 +11,15 @@ import json, math, sys
 from pathlib import Path
 
 NODES = [
-    # id, x, y, door (x, y) or None, checkpoint label or None
-    ("elevator", 16.27, 36.67, (16.18, 38.37), "Elevator: just outside the doors, facing the hallway"),
+    # id, x, y, door (x, y) or None, landmark label or None
+    ("elevator", 16.27, 36.67, (16.18, 38.37), "Elevator"),
     ("lobby",    16.27, 34.88, None, None),
     ("400J-top", 19.72, 31.88, None, None),
-    ("416",      19.75, 19.76, (21.31, 19.76), "Door of 416 iLounge"),
-    ("junction", 19.75, 14.50, None, "Corner where 400J meets 400M"),
-    ("420",      18.40, 14.50, (17.64, 13.72), "Double doors of 420 Student Services"),
-    ("430-west", 23.54, 14.50, (23.54, 13.20), "West door of 430 Computer Classroom"),
-    ("430-east", 33.72, 14.50, (33.72, 13.08), "East door of 430 Computer Classroom"),
+    ("416",      19.75, 19.76, (21.31, 19.76), "416 iLounge"),
+    ("junction", 19.75, 14.50, None, None),
+    ("420",      18.40, 14.50, (17.64, 13.72), "420 Student Services"),
+    ("430-west", 23.54, 14.50, (23.54, 13.20), "430 Computer Classroom, west door"),
+    ("430-east", 33.72, 14.50, (33.72, 13.08), "430 Computer Classroom, east door"),
 ]
 EDGES = [("elevator", "lobby"), ("lobby", "400J-top"), ("400J-top", "416"), ("416", "junction"),
          ("junction", "420"), ("junction", "430-west"), ("430-west", "430-east")]
@@ -37,7 +37,7 @@ def main():
         "building": "Mary Gates Hall", "floorLabel": "4th Floor", "frame": "plan meters (see floor.json)",
         "startNode": "elevator", "startFacingDegrees": -90,
         "nodes": [{"id": i, "x": x, "y": y, **({"doorX": d[0], "doorY": d[1]} if d else {}),
-                   **({"checkpoint": cp} if cp else {})} for i, x, y, d, cp in NODES],
+                   **({"landmark": cp} if cp else {})} for i, x, y, d, cp in NODES],
         "edges": [list(e) for e in EDGES],
         "destinations": DESTINATIONS,
     }

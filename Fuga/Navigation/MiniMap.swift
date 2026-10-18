@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Small top-down map: the floor's hallways (gray), the route (green), the path walked while
-/// mapping (blue), checkpoints, and you (blue dot + facing cone).
+/// walked (blue), highlighted nodes, and you (blue dot + facing cone).
 struct MiniMap: View {
     let graph: HallwayGraph
     var route: Route?

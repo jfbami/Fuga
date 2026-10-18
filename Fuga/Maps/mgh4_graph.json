@@ -11,7 +11,7 @@
       "y": 36.67,
       "doorX": 16.18,
       "doorY": 38.37,
-      "checkpoint": "Elevator: just outside the doors, facing the hallway"
+      "landmark": "Elevator"
     },
     {
       "id": "lobby",
@@ -29,13 +29,12 @@
       "y": 19.76,
       "doorX": 21.31,
       "doorY": 19.76,
-      "checkpoint": "Door of 416 iLounge"
+      "landmark": "416 iLounge"
     },
     {
       "id": "junction",
       "x": 19.75,
-      "y": 14.5,
-      "checkpoint": "Corner where 400J meets 400M"
+      "y": 14.5
     },
     {
       "id": "420",
@@ -43,7 +42,7 @@
       "y": 14.5,
       "doorX": 17.64,
       "doorY": 13.72,
-      "checkpoint": "Double doors of 420 Student Services"
+      "landmark": "420 Student Services"
     },
     {
       "id": "430-west",
@@ -51,7 +50,7 @@
       "y": 14.5,
       "doorX": 23.54,
       "doorY": 13.2,
-      "checkpoint": "West door of 430 Computer Classroom"
+      "landmark": "430 Computer Classroom, west door"
     },
     {
       "id": "430-east",
@@ -59,7 +58,7 @@
       "y": 14.5,
       "doorX": 33.72,
       "doorY": 13.08,
-      "checkpoint": "East door of 430 Computer Classroom"
+      "landmark": "430 Computer Classroom, east door"
     }
   ],
   "edges": [

@@ -19,21 +19,15 @@ If the project won't open on your Xcode, regenerate it with [XcodeGen](https://g
 
 ## Try it in Mary Gates Hall, 4th floor
 
-**First, record the map once (Mapping Mode, any iPhone; a Pro is best):**
-1. Open Fuga, tap **Mapping Mode**.
-2. Stand just outside the elevator, facing down the hallway, and tap **Elevator**.
-3. Walk the hallways slowly in both directions (elevator lobby, 400J, 400M past both 430 doors), phone upright.
-4. Stop at a few of the listed spots and tap each one when you're standing there: at least 2 far apart, e.g. the elevator and the east door of 430. More is better.
-5. Tap **Save map**, then **Done**. To put the map on other phones, tap **Share map files**, AirDrop them to a Mac and add both files to `Fuga/Maps/`.
+The floor's map ships inside the app, so anyone can open Fuga and go. No setup, no scanning.
 
-**Then navigate from anywhere in the mapped hallways:**
-1. Open Fuga and look around slowly. Within a few seconds it says **Found you** and where you are.
-2. Pick a room (430 Computer Classroom, 416 iLounge, 420 Student Services, or back to the elevator) and tap **Start from here**.
-3. Follow the arrow. Turns are spoken 4 m ahead and at the corner (**2 vibration pulses for left, 3 for right**); on arrival it says which side the door is on. If you wander off, it plans a new route from where you are.
+1. Open Fuga. Under **Where are you?**, pick the room or landmark you're closest to: the Elevator, 416 iLounge, 420 Student Services, or either door of 430 Computer Classroom.
+2. Stand in front of that door, facing it, phone upright. That tells Fuga exactly where you are and which way you're facing.
+3. Under **Where to?**, pick a room and tap **Start**. It tells you which way to turn first (usually "Turn around").
+4. Follow the arrow. Turns are spoken 4 m ahead and at the corner (**2 vibration pulses for left, 3 for right**); on arrival it says which side the door is on.
+5. Passing a room on the list? Tap **I'm at a landmark** and pick it to fix any drift. It re-plans the route from there.
 
-No map yet? **Start at the elevator** still works: step out of the elevator, face down the hallway, tap Start.
-
-How it works: ARKit saves a 3D map of the hallways (an `ARWorldMap`). Next time, the camera recognizes the hallway and ARKit snaps back into the map's coordinates. The checkpoints you tapped while mapping tie those coordinates to the UW floor plan (2 checkpoints line up to within about 0.4 m, tested on the LiDAR scan). Routes are computed on the phone over a small hallway graph (`Fuga/Maps/mgh4_graph.json`).
+How it works: the landmark you pick pins your spot and direction on the UW floor plan. ARKit then follows every step with the camera and motion sensors. Walking straight down a hallway corrects the direction if you weren't facing the door squarely (tested: recovers a 28° error). Routes are computed on the phone over a small hallway graph (`Fuga/Maps/mgh4_graph.json`).
 
 ## What's in the app
 
@@ -41,13 +35,12 @@ How it works: ARKit saves a 3D map of the hallways (an `ARWorldMap`). Next time,
 | --- | --- |
 | `Fuga/Guidance/ExitArrowView.swift` | Find My–style arrow: bearing relative to the phone + distance. Turns green with a haptic tap when you face the right way |
 | `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale |
-| `Fuga/Navigation/RouteNavigator.swift` | ARKit tracking, map recognition, Mapping Mode, elevator fallback, rerouting, spoken turns, vibration, arrival |
+| `Fuga/Navigation/RouteNavigator.swift` | ARKit tracking, landmark start and re-pin, hallway heading correction, spoken turns, vibration, arrival |
 | `Fuga/Navigation/HallwayGraph.swift` | Hallway graph + shortest route from any spot to a room's nearest door |
-| `Fuga/Navigation/WorldMapStore.swift` | Saves/loads the ARKit map and its alignment to the floor plan (checkpoint fit) |
 | `Fuga/Navigation/RouteTracker.swift` | Route geometry: progress along the route, look-ahead target, turns (no ARKit, easy to test) |
 | `Fuga/Navigation/Route.swift` | Route model |
 | `Fuga/Navigation/MiniMap.swift`, `ARCameraView.swift` | Debug map and camera background |
-| `Fuga/Maps/` | Hallway graph, plus saved maps (`mgh4.arworldmap`, `mgh4.alignment.json`) if you add them |
+| `Fuga/Maps/` | Hallway graph with rooms, doors and landmarks |
 | `tools/mapping/` | Pipeline: floor plan PDF + LiDAR walk -> map, landmarks, routes. See its README |
 
 ## Web demo (no Xcode needed)

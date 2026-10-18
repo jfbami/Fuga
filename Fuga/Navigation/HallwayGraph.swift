@@ -9,13 +9,19 @@ struct HallwayGraph: Codable {
         let y: Double
         let doorX: Double?
         let doorY: Double?
-        /// If set, a mapper can stand here to tie the 3D map to the floor plan.
-        let checkpoint: String?
+        /// If set, a person can stand here, facing the door, to tell the app where they are.
+        let landmark: String?
 
         var point: Vec2 { Vec2(x: x, y: y) }
         var door: Vec2? {
             guard let doorX, let doorY else { return nil }
             return Vec2(x: doorX, y: doorY)
+        }
+
+        /// Plan direction you face when standing here looking at the door.
+        var facingDoorDegrees: Double? {
+            guard let door else { return nil }
+            return (door - point).angleDegrees
         }
     }
 
@@ -42,7 +48,8 @@ struct HallwayGraph: Codable {
 
     func node(_ id: String) -> Node? { nodes.first { $0.id == id } }
 
-    var checkpoints: [Node] { nodes.filter { $0.checkpoint != nil } }
+    /// Places you can say you're next to.
+    var landmarks: [Node] { nodes.filter { $0.landmark != nil && $0.door != nil } }
 
     /// Closest point on any hallway edge, and how far away it is.
     func nearestOnGraph(_ p: Vec2) -> (a: String, b: String, point: Vec2, distance: Double)? {

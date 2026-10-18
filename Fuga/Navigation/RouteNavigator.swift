@@ -3,28 +3,32 @@ import AVFoundation
 import Combine
 import UIKit
 
+/// How ARKit's world (top-down x, -z) lines up with the floor plan:
+/// plan = planOrigin + rotate(ar - arOrigin, by: rotationDegrees).
+struct PlanAlignment {
+    var arOrigin: Vec2
+    var planOrigin: Vec2
+    var rotationDegrees: Double
+
+    func toPlan(_ ar: Vec2) -> Vec2 {
+        planOrigin + (ar - arOrigin).rotated(byDegrees: rotationDegrees)
+    }
+}
+
 /// Tracks the phone with ARKit, places it on the floor plan, routes to a destination,
 /// and turns the route into arrow directions, spoken steps and vibration.
 ///
-/// Where you are on the plan comes from one of two places:
-/// - A saved ARKit map of the floor (recorded once in Mapping Mode). When the camera
-///   recognizes the hallway, ARKit snaps back into the map's coordinates and the saved
-///   alignment turns that into plan meters. Works from anywhere in the mapped area.
-/// - Fallback: start at the elevator, facing down the hallway (no map needed).
+/// Where you start: you tell the app which landmark you're next to (a room door or the
+/// elevator) and stand in front of it, facing the door. That pins your position and
+/// direction on the plan. ARKit follows every step from there; walking straight down a
+/// hallway corrects any error in the starting direction, and you can re-pin at any
+/// landmark you pass.
 final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
-    enum Phase: Equatable { case idle, navigating, arrived, mapping }
-    enum Localization: Equatable {
-        case noMap          // no saved map: use the elevator start
-        case searching      // map loaded, waiting for the camera to recognize the hallway
-        case located        // recognized: we know where you are
-    }
+    enum Phase: Equatable { case idle, navigating, arrived }
 
     // MARK: Published state
 
     @Published private(set) var phase: Phase = .idle
-    @Published private(set) var localization: Localization = .noMap
-    @Published private(set) var mapSource: String?
-    @Published private(set) var whereYouAre: String?
     @Published private(set) var trackingReady = false
     @Published private(set) var trackingMessage: String? = "Starting the camera…"
     @Published private(set) var relativeBearing: Double = 0
@@ -36,36 +40,21 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var route: Route?
     @Published private(set) var destination: HallwayGraph.Destination?
 
-    // Mapping Mode
-    @Published private(set) var mappingStatus = ""
-    @Published private(set) var mappingPath: [Vec2] = []
-    @Published private(set) var checkpointsTaken: [String] = []
-    @Published private(set) var canSaveMap = false
-    @Published private(set) var mapMessage: String?
-
     let session = ARSession()
     let graph: HallwayGraph
-    let mapName = "mgh4"
 
     // MARK: Private state
 
-    private var alignment: MapAlignment?
-    private var useCorridorCorrection = false
+    private var alignment: PlanAlignment?
     private var tracker: RouteTracker?
-    private var pendingElevatorStart = false
+    private var pendingStart: HallwayGraph.Node?
     private var lastUpdate: TimeInterval = 0
     private var lastFrame: (position: Vec2, heading: Double)?
     private var arHistory: [Vec2] = []
-    private var sawRelocalizing = false
-    private var searchingSince: TimeInterval?
 
     private var announcedSoon = Set<Int>()
     private var announcedNow = Set<Int>()
     private var offRouteSince: TimeInterval?
-
-    private var mappingRaw: [Vec2] = []
-    private var checkpointAR: [Vec2] = []
-    private var checkpointPlan: [Vec2] = []
 
     private let speech = AVSpeechSynthesizer()
     private let haptic = UIImpactFeedbackGenerator(style: .heavy)
@@ -73,7 +62,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
     private let lookAhead = 2.5
     private let arrivalRadius = 1.5
-    static let originAnchorName = "fuga-origin"
 
     init(graph: HallwayGraph) {
         self.graph = graph
@@ -82,9 +70,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
     }
 
-    // MARK: Camera / map
+    // MARK: Camera
 
-    /// Starts tracking. If a map of this floor exists, ARKit tries to recognize it.
     func runCamera() {
         guard ARWorldTrackingConfiguration.isSupported else {
             trackingMessage = "This iPhone doesn't support ARKit world tracking."
@@ -93,18 +80,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         let config = ARWorldTrackingConfiguration()
         config.worldAlignment = .gravity
         config.planeDetection = [.horizontal]
-        alignment = nil
-        sawRelocalizing = false
-        searchingSince = nil
-        if let saved = WorldMapStore.load(name: mapName) {
-            config.initialWorldMap = saved.map
-            alignment = saved.alignment
-            mapSource = saved.source
-            localization = .searching
-        } else {
-            mapSource = nil
-            localization = .noMap
-        }
         session.run(config, options: [.resetTracking, .removeExistingAnchors])
     }
 
@@ -112,29 +87,15 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
     // MARK: Navigation
 
-    /// Route from wherever the map says you are.
-    func startHere(to destination: HallwayGraph.Destination) {
-        guard localization == .located, let p = planPosition,
-              let route = graph.route(from: p, to: destination) else { return }
-        useCorridorCorrection = false
-        begin(route: route, destination: destination)
-    }
-
-    /// Fallback: you're just outside the elevator, facing down the hallway.
-    func startAtElevator(to destination: HallwayGraph.Destination) {
-        guard let start = graph.node(graph.startNode),
-              let route = graph.route(from: start.point, to: destination, fromName: "the elevator") else { return }
-        useCorridorCorrection = true
-        localization = .noMap
+    /// You're standing in front of `landmark`'s door, facing it. Route to `destination`.
+    func start(at landmark: HallwayGraph.Node, to destination: HallwayGraph.Destination) {
+        guard let route = graph.route(from: landmark.point, to: destination,
+                                      fromName: landmark.landmark ?? landmark.id) else { return }
         if let frame = lastFrame, trackingReady {
-            calibrateAtElevator(arPosition: frame.position, arHeading: frame.heading)
+            pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: false)
         } else {
-            pendingElevatorStart = true
+            pendingStart = landmark
         }
-        begin(route: route, destination: destination)
-    }
-
-    private func begin(route: Route, destination: HallwayGraph.Destination) {
         self.route = route
         self.destination = destination
         let t = RouteTracker(points: route.points.map { Vec2(x: $0.x, y: $0.y) })
@@ -147,14 +108,36 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         try? AVAudioSession.sharedInstance().setActive(true)
         UIApplication.shared.isIdleTimerDisabled = true
         haptic.prepare()
-        let firstLeg: String
-        if let turn = t.turns.first {
-            firstLeg = "Walk \(max(1, Int(turn.distanceAlong.rounded()))) meters, then \(turn.spokenTurn)."
-        } else {
-            firstLeg = "Walk \(max(1, Int(t.total.rounded()))) meters."
+
+        // You start facing the door, so the first instruction is usually to turn around.
+        var opening = "Going to \(route.to.name), \(Int(route.lengthMeters.rounded())) meters."
+        if let facing = landmark.facingDoorDegrees, route.points.count >= 2 {
+            let first = Vec2(x: route.points[1].x - route.points[0].x, y: route.points[1].y - route.points[0].y)
+            opening += " " + Self.turnToFace(from: facing, to: first.angleDegrees) + "."
         }
-        say("Going to \(route.to.name), \(Int(route.lengthMeters.rounded())) meters. \(firstLeg)")
-        instruction = firstLeg
+        if let turn = t.turns.first {
+            opening += " Walk \(max(1, Int(turn.distanceAlong.rounded()))) meters, then \(turn.spokenTurn)."
+        } else {
+            opening += " Walk \(max(1, Int(t.total.rounded()))) meters."
+        }
+        say(opening)
+        instruction = "Turn until the arrow is green, then walk"
+    }
+
+    /// "I'm next to this landmark right now" during a walk: fixes position drift.
+    /// Keeps the current direction estimate (you don't need to face the door).
+    func repin(at landmark: HallwayGraph.Node) {
+        guard let frame = lastFrame, trackingReady else { return }
+        pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: true)
+        if let destination, let newRoute = graph.route(from: landmark.point, to: destination) {
+            route = newRoute
+            tracker = RouteTracker(points: newRoute.points.map { Vec2(x: $0.x, y: $0.y) })
+            announcedSoon.removeAll()
+            announcedNow.removeAll()
+            if phase == .arrived { phase = .navigating }
+        }
+        notify.notificationOccurred(.success)
+        say("Got it, you're at \(landmark.landmark ?? landmark.id).")
     }
 
     func stop() {
@@ -162,121 +145,23 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         route = nil
         tracker = nil
         destination = nil
-        pendingElevatorStart = false
+        pendingStart = nil
+        alignment = nil
+        planPosition = nil
         speech.stopSpeaking(at: .immediate)
         UIApplication.shared.isIdleTimerDisabled = false
-        // After an elevator start, go back to recognizing the saved map (if there is one).
-        if localization == .noMap, mapSource != nil { runCamera() }
     }
 
-    private func calibrateAtElevator(arPosition: Vec2, arHeading: Double) {
-        guard let start = graph.node(graph.startNode) else { return }
-        alignment = MapAlignment(arOrigin: [arPosition.x, arPosition.y], planOrigin: [start.x, start.y],
-                                 rotationDegrees: graph.startFacingDegrees - arHeading,
-                                 checkpoints: [start.id], createdAt: Date())
+    private func pin(at landmark: HallwayGraph.Node, arPosition: Vec2, arHeading: Double, keepDirection: Bool) {
+        let rotation: Double
+        if keepDirection, let current = alignment {
+            rotation = current.rotationDegrees
+        } else {
+            rotation = (landmark.facingDoorDegrees ?? 0) - arHeading
+        }
+        alignment = PlanAlignment(arOrigin: arPosition, planOrigin: landmark.point, rotationDegrees: rotation)
         arHistory.removeAll()
-        pendingElevatorStart = false
-    }
-
-    private func reroute(from position: Vec2) {
-        guard let destination, let newRoute = graph.route(from: position, to: destination) else { return }
-        route = newRoute
-        tracker = RouteTracker(points: newRoute.points.map { Vec2(x: $0.x, y: $0.y) })
-        announcedSoon.removeAll()
-        announcedNow.removeAll()
-        isOffRoute = false
-        offRouteSince = nil
-        say("New route. \(Int(newRoute.lengthMeters.rounded())) meters to \(newRoute.to.name).")
-    }
-
-    // MARK: Mapping Mode
-
-    /// Start recording a new map. Begin at the elevator, facing down the hallway.
-    func startMapping() {
-        let config = ARWorldTrackingConfiguration()
-        config.worldAlignment = .gravity
-        config.planeDetection = [.horizontal, .vertical]
-        session.run(config, options: [.resetTracking, .removeExistingAnchors])
-        phase = .mapping
-        alignment = nil
-        mappingRaw = []
-        mappingPath = []
-        checkpointAR = []
-        checkpointPlan = []
-        checkpointsTaken = []
-        canSaveMap = false
-        mapMessage = nil
-        UIApplication.shared.isIdleTimerDisabled = true
-    }
-
-    /// "I'm standing at this checkpoint now."
-    func markCheckpoint(_ nodeID: String) {
-        guard phase == .mapping, trackingReady, let pose = lastFrame, let node = graph.node(nodeID) else {
-            mapMessage = "Wait until tracking is ready, then try again."
-            return
-        }
-        checkpointAR.append(pose.position)
-        checkpointPlan.append(node.point)
-        checkpointsTaken.append(nodeID)
-        if checkpointAR.count == 1 {
-            // One point: assume the elevator start direction until a second checkpoint fixes rotation.
-            let facing = nodeID == graph.startNode ? graph.startFacingDegrees - pose.heading : 0
-            alignment = MapAlignment(arOrigin: [pose.position.x, pose.position.y], planOrigin: [node.x, node.y],
-                                     rotationDegrees: facing, checkpoints: checkpointsTaken, createdAt: Date())
-        } else if let fit = MapAligner.fitRigid(ar: checkpointAR, plan: checkpointPlan) {
-            alignment = MapAlignment(arOrigin: [fit.arOrigin.x, fit.arOrigin.y], planOrigin: [fit.planOrigin.x, fit.planOrigin.y],
-                                     rotationDegrees: fit.rotationDegrees, checkpoints: checkpointsTaken, createdAt: Date())
-        }
-        if let alignment { mappingPath = mappingRaw.map(alignment.toPlan) }
-        notify.notificationOccurred(.success)
-        mapMessage = "Checkpoint saved: \(node.checkpoint ?? node.id)"
-    }
-
-    func saveMap() {
-        guard var alignment, checkpointsTaken.count >= 2 else {
-            mapMessage = "Mark at least 2 checkpoints far apart (for example the elevator and a 430 door)."
-            return
-        }
-        alignment.checkpoints = checkpointsTaken
-        if let frame = session.currentFrame {
-            session.add(anchor: ARAnchor(name: Self.originAnchorName, transform: frame.camera.transform))
-        }
-        mapMessage = "Saving the map…"
-        session.getCurrentWorldMap { [weak self] map, error in
-            DispatchQueue.main.async {
-                guard let self else { return }
-                guard let map else {
-                    self.mapMessage = "Couldn't save the map: \(error?.localizedDescription ?? "unknown error"). Walk a bit more and try again."
-                    return
-                }
-                do {
-                    try WorldMapStore.save(map: map, alignment: alignment, name: self.mapName)
-                    let size = (try? Data(contentsOf: WorldMapStore.mapURL(self.mapName)).count) ?? 0
-                    self.mapMessage = "Map saved (\(size / 1_000_000) MB, \(map.rawFeaturePoints.points.count) points)."
-                    self.mapSource = "recorded on this phone"
-                } catch {
-                    self.mapMessage = "Couldn't save the map: \(error.localizedDescription)"
-                }
-            }
-        }
-    }
-
-    /// Leave Mapping Mode and restart tracking with the saved map.
-    func endMapping() {
-        phase = .idle
-        UIApplication.shared.isIdleTimerDisabled = false
-        runCamera()
-    }
-
-    func deleteSavedMap() {
-        WorldMapStore.delete(name: mapName)
-        mapMessage = "Saved map deleted."
-        if phase == .idle { runCamera() }
-    }
-
-    var savedMapFiles: [URL] {
-        [WorldMapStore.mapURL(mapName), WorldMapStore.alignmentURL(mapName)]
-            .filter { FileManager.default.fileExists(atPath: $0.path) }
+        pendingStart = nil
     }
 
     // MARK: ARSessionDelegate
@@ -289,50 +174,26 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         guard let pose = Self.topDownPose(frame.camera.transform) else { return }
         lastFrame = pose
 
-        if phase == .mapping {
-            updateMapping(frame: frame, pose: pose)
-            return
+        if let landmark = pendingStart, trackingReady {
+            pin(at: landmark, arPosition: pose.position, arHeading: pose.heading, keepDirection: false)
         }
-
-        if localization == .searching {
-            detectRelocalization(frame: frame)
-        }
-        if pendingElevatorStart, trackingReady {
-            calibrateAtElevator(arPosition: pose.position, arHeading: pose.heading)
-        }
-
-        // Only trust positions once we're located (map) or calibrated (elevator).
-        let trusted = localization == .located || (localization == .noMap && phase != .idle && !pendingElevatorStart)
-        guard trusted, var alignment else {
-            planPosition = nil
-            whereYouAre = nil
-            return
-        }
+        guard phase != .idle, pendingStart == nil, var alignment, var tracker else { return }
 
         var position = alignment.toPlan(pose.position)
         var heading = pose.heading + alignment.rotationDegrees
 
-        if phase == .idle {
-            planPosition = position
-            planHeading = heading
-            whereYouAre = describe(position)
-            return
-        }
-        guard var tracker else { return }
-
-        if useCorridorCorrection {
-            arHistory.append(pose.position)
-            if arHistory.count > 60 { arHistory.removeFirst(arHistory.count - 60) }
-            if let fix = corridorCorrection(arPosition: pose.position, planPosition: position,
-                                            heading: alignment.rotationDegrees, tracker: tracker) {
-                let pulled = position + (fix.closest - position) * 0.2
-                alignment.rotationDegrees += 0.3 * fix.delta
-                alignment.arOrigin = [pose.position.x, pose.position.y]
-                alignment.planOrigin = [pulled.x, pulled.y]
-                self.alignment = alignment
-                position = pulled
-                heading = pose.heading + alignment.rotationDegrees
-            }
+        // Hallway heading correction: a straight 3 m walk next to a long route segment tells us
+        // which way the hallway really runs (fixes not facing the door squarely at Start).
+        arHistory.append(pose.position)
+        if arHistory.count > 60 { arHistory.removeFirst(arHistory.count - 60) }
+        if let fix = corridorCorrection(arPosition: pose.position, planPosition: position,
+                                        rotation: alignment.rotationDegrees, tracker: tracker) {
+            let pulled = position + (fix.closest - position) * 0.2
+            alignment = PlanAlignment(arOrigin: pose.position, planOrigin: pulled,
+                                      rotationDegrees: alignment.rotationDegrees + 0.3 * fix.delta)
+            self.alignment = alignment
+            position = pulled
+            heading = pose.heading + alignment.rotationDegrees
         }
         planPosition = position
         planHeading = heading
@@ -347,7 +208,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             : tracker.point(at: along + (off > 3 ? 1 : lookAhead))
         relativeBearing = RouteTracker.relativeBearing(from: position, headingDegrees: heading, to: target)
 
-        if handleOffRoute(off, position: position, time: frame.timestamp) { return }
+        handleOffRoute(off, time: frame.timestamp)
         if remaining < arrivalRadius {
             arrive()
             return
@@ -361,63 +222,9 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         trackingMessage = "Camera tracking stopped: \(error.localizedDescription)"
     }
 
-    // MARK: Relocalization
-
-    private func detectRelocalization(frame: ARFrame) {
-        if searchingSince == nil { searchingSince = frame.timestamp }
-        if case .limited(.relocalizing) = frame.camera.trackingState { sawRelocalizing = true }
-        let anchorBack = frame.anchors.contains { $0.name == Self.originAnchorName }
-        if case .normal = frame.camera.trackingState, anchorBack || sawRelocalizing {
-            localization = .located
-            notify.notificationOccurred(.success)
-            say("Found you on the map.")
-            return
-        }
-        if let since = searchingSince, frame.timestamp - since > 20 {
-            trackingMessage = "Still looking. Point the camera down the hallway, or start at the elevator."
-        }
-    }
-
-    private func describe(_ p: Vec2) -> String {
-        var best: (String, Double)?
-        for d in graph.destinations {
-            for id in d.doors {
-                guard let n = graph.node(id) else { continue }
-                let dist = (n.point - p).length
-                if best == nil || dist < best!.1 {
-                    best = (d.id == "elevator" ? "the elevator" : "\(d.title) \(d.subtitle)", dist)
-                }
-            }
-        }
-        guard let best else { return "On the map" }
-        return best.1 < 6 ? "Near \(best.0)" : "In the hallway, \(Int(best.1.rounded())) m from \(best.0)"
-    }
-
-    // MARK: Mapping updates
-
-    private func updateMapping(frame: ARFrame, pose: (position: Vec2, heading: Double)) {
-        if mappingRaw.last.map({ (pose.position - $0).length > 0.3 }) ?? true {
-            mappingRaw.append(pose.position)
-            if let alignment { mappingPath = mappingRaw.map(alignment.toPlan) }
-        }
-        if let alignment {
-            planPosition = alignment.toPlan(pose.position)
-            planHeading = pose.heading + alignment.rotationDegrees
-        }
-        switch frame.worldMappingStatus {
-        case .notAvailable: mappingStatus = "Not enough seen yet. Move slowly."
-        case .limited: mappingStatus = "Keep walking slowly and look around."
-        case .extending: mappingStatus = "Mapping new area."
-        case .mapped: mappingStatus = "This area is well mapped."
-        @unknown default: mappingStatus = ""
-        }
-        let goodEnough = frame.worldMappingStatus == .mapped || frame.worldMappingStatus == .extending
-        canSaveMap = goodEnough && checkpointsTaken.count >= 2
-    }
-
     // MARK: Guidance
 
-    private func corridorCorrection(arPosition: Vec2, planPosition: Vec2, heading rotation: Double,
+    private func corridorCorrection(arPosition: Vec2, planPosition: Vec2, rotation: Double,
                                     tracker: RouteTracker) -> (delta: Double, closest: Vec2)? {
         guard arHistory.count >= 2 else { return nil }
         var oldIndex: Int?
@@ -456,20 +263,12 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             : turn.spokenTurn.capitalizedFirst
     }
 
-    /// Returns true if it rerouted.
-    private func handleOffRoute(_ off: Double, position: Vec2, time: TimeInterval) -> Bool {
+    private func handleOffRoute(_ off: Double, time: TimeInterval) {
         if off > 3 {
             if offRouteSince == nil { offRouteSince = time }
-            if let since = offRouteSince, time - since > 3 {
-                if localization == .located, phase == .navigating {
-                    // We trust the map position, so plan a new route from here.
-                    reroute(from: position)
-                    return true
-                }
-                if !isOffRoute {
-                    isOffRoute = true
-                    say("You're off the route. Turn until the phone vibrates, then walk.")
-                }
+            if !isOffRoute, let since = offRouteSince, time - since > 2 {
+                isOffRoute = true
+                say("You're off the route. Turn until the phone vibrates, then walk. If you're next to a room, tap I'm at a landmark.")
             }
         } else {
             offRouteSince = nil
@@ -478,7 +277,6 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
                 say("Back on the route.")
             }
         }
-        return false
     }
 
     private func arrive() {
@@ -503,11 +301,18 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
             switch reason {
             case .excessiveMotion: trackingMessage = "Slow down a little"
             case .insufficientFeatures: trackingMessage = "Point the camera at the hallway, not a blank wall"
-            case .relocalizing: trackingMessage = "Look around slowly so the app can recognize where you are"
-            case .initializing: trackingMessage = "Move the phone slowly from side to side"
+            case .initializing, .relocalizing: trackingMessage = "Move the phone slowly from side to side"
             @unknown default: trackingMessage = "Hold the phone steady"
             }
         }
+    }
+
+    /// "Turn around", "Turn left", … to go from facing one plan direction to another.
+    static func turnToFace(from facing: Double, to direction: Double) -> String {
+        let d = RouteTracker.wrap(direction - facing)  // + = counter-clockwise = left
+        if abs(d) > 135 { return "Turn around" }
+        if abs(d) < 30 { return "Go straight ahead" }
+        return d > 0 ? "Turn left" : "Turn right"
     }
 
     private func say(_ text: String) {
