@@ -10,6 +10,8 @@ final class VoiceGuidance: ObservableObject {
     private let synthesizer = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
     private var scheduler = VoiceCueScheduler()
+    /// Direction updates wait until a navigator corner clip has finished.
+    private var turnClipUntil: TimeInterval = 0
 
     func setEnabled(_ enabled: Bool) {
         stop()
@@ -27,10 +29,12 @@ final class VoiceGuidance: ObservableObject {
         if player != nil { player?.stop(); player = nil }
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         scheduler = VoiceCueScheduler()
+        turnClipUntil = 0
     }
 
     func update(bearing: Double, distance: Double) {
         guard isEnabled else { return }
+        guard ProcessInfo.processInfo.systemUptime >= turnClipUntil else { return }
         guard let cue = VoiceCue.resolve(bearing: bearing, distance: distance) else {
             stop()
             return
@@ -41,6 +45,12 @@ final class VoiceGuidance: ObservableObject {
 
     /// Plays one cue right away, even when cues are turned off (used by the feedback test).
     func preview(_ cue: VoiceCue) { speak(cue) }
+
+    /// Plays the navigator's corner clip; the 4-per-second direction updates don't cut it off.
+    func playTurn(_ cue: VoiceCue) {
+        speak(cue)
+        turnClipUntil = ProcessInfo.processInfo.systemUptime + (player?.duration ?? 2)
+    }
 
     private func speak(_ cue: VoiceCue) {
         player?.stop()

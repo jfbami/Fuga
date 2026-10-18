@@ -42,7 +42,10 @@ struct ContentView: View {
             case .navigating, .arrived: guidanceScreen
             }
         }
-        .onAppear { nav.runCamera() }
+        .onAppear {
+            nav.runCamera()
+            nav.playCue = { [weak voice] cue in voice?.playTurn(cue) }
+        }
         .onDisappear { nav.pauseCamera() }
         .sheet(isPresented: $showQuickLook) {
             QuickLookView(session: nav.session, onCameraWork: { feedbackTest.stop() })

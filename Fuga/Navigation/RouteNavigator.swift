@@ -55,6 +55,9 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
     let session = ARSession()
 
+    /// Plays a bundled ElevenLabs clip (set by the screen). Nil = use the iPhone voice for everything.
+    var playCue: ((VoiceCue) -> Void)?
+
     /// True while a turn instruction or arrival is being spoken (other voice cues wait).
     var isSpeaking: Bool { speech.isSpeaking }
     /// The pulsing green line on the floor (added to the camera view's 3D scene).
@@ -86,6 +89,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         super.init()
         session.delegate = self
         try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        // Voice input switches the session to recording, which otherwise mutes vibration.
+        try? AVAudioSession.sharedInstance().setAllowHapticsAndSystemSoundsDuringRecording(true)
     }
 
     // MARK: Camera
@@ -315,7 +320,10 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         if toTurn <= 1.2, !announcedNow.contains(turn.vertex) {
             announcedNow.insert(turn.vertex)
             announcedSoon.insert(turn.vertex)
-            say("\(turn.spokenTurn.capitalizedFirst) now, then walk \(Int(turn.nextStretchMeters.rounded())) meters.")
+            // At the corner, use the ElevenLabs "Turn to your left/right" clip when it's available.
+            if let playCue { playCue(turn.degrees > 0 ? .left : .right) } else {
+                say("\(turn.spokenTurn.capitalizedFirst) now, then walk \(Int(turn.nextStretchMeters.rounded())) meters.")
+            }
         } else if toTurn <= 4, !announcedSoon.contains(turn.vertex) {
             announcedSoon.insert(turn.vertex)
             say("In \(max(1, Int(toTurn.rounded()))) meters, \(turn.spokenTurn).")

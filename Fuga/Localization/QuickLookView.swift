@@ -65,7 +65,7 @@ struct QuickLookView: View {
                                   systemImage: feedbackRunning ? "stop.fill" : "waveform")
                         }
                         .disabled(model.busy || voice.listening)
-                        if feedbackRunning { Text(feedbackStep) }
+                        if !feedbackStep.isEmpty { Text(feedbackStep) }
                         Text("Plays sample feedback. It does not mean your location has been found.")
                             .font(.footnote).foregroundStyle(.secondary)
                     }
