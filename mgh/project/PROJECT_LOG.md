@@ -425,3 +425,8 @@ All evidence files above are also embedded in the master. Use `MGH_Master_tools.
 - A first draft of the server error message had an unescaped quote (syntax error caught by the test import) and was fixed before any run. The arrow and the server's initial turn use different aim points (2 m along the path vs first node >= 2 m away), so they differ (-1.5 vs 16 deg left); both indicate a slight left turn.
 
 - D033 follow-up: GitHub Actions run 39109317029 on PR #2 head 0cf6ec2 succeeded: "Route preview math checks passed" (new tests/route_preview), existing voice-cue checks, Python tests, unsigned iOS Simulator xcodebuild (BUILD SUCCEEDED, no warnings reported in RoutePreview*/QuickLook* files) and the bundled-clip check. This is a native compile plus math tests, not a phone test of the preview.
+
+
+### 2026-10-18 — Decision: phone-test the preview before merging PR #2
+
+- D034 (user decision): the teammate builds and tests the route preview from the mgh-localization branch on a physical iPhone, with the owner's development server running with --route-graph, before PR #2 is merged into nav/route-guidance. PR #2 stays open and unmerged until that test's export and notes come back. Guidance stays off.
