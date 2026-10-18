@@ -4,6 +4,11 @@ import SwiftUI
 /// the floor label, and the Find My–style arrow at the bottom center.
 struct ContentView: View {
     @StateObject private var demo = CompassDemo()
+    @StateObject private var voice = VoiceGuidance()
+    @State private var offCourseHaptics = OffCourseHaptics()
+    @State private var subtleHapticPulse = 0
+    @State private var strongHapticPulse = 0
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -17,6 +22,20 @@ struct ContentView: View {
 
             VStack {
                 topBar
+                HStack {
+                    Button {
+                        voice.setEnabled(!voice.isEnabled)
+                    } label: {
+                        Label(voice.isEnabled ? "Mute guidance" : "Enable voice",
+                              systemImage: voice.isEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    }
+                    .buttonStyle(.bordered)
+                    Spacer()
+                }
+                Text(voice.status)
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.6))
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 Spacer()
                 ExitArrowView(
                     relativeBearing: demo.relativeBearing,
@@ -25,6 +44,42 @@ struct ContentView: View {
                 .padding(.bottom, 24)
             }
             .padding(.horizontal, 20)
+        }
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: subtleHapticPulse) { _, _ in
+            scenePhase == .active
+        }
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: strongHapticPulse) { _, _ in
+            scenePhase == .active
+        }
+        .task(id: scenePhase) {
+            offCourseHaptics.reset()
+            guard scenePhase == .active else {
+                voice.stop()
+                return
+            }
+            // Sampling also permits stable cues/repeats when the compass is stationary.
+            while !Task.isCancelled {
+                voice.update(bearing: demo.relativeBearing, distance: demo.distanceMeters)
+                if let strength = offCourseHaptics.update(
+                    bearing: demo.relativeBearing,
+                    distance: demo.distanceMeters,
+                    now: ProcessInfo.processInfo.systemUptime
+                ) {
+                    switch strength {
+                    case .subtle: subtleHapticPulse += 1
+                    case .strong: strongHapticPulse += 1
+                    }
+                }
+                do {
+                    try await Task.sleep(for: .milliseconds(250))
+                } catch { break }
+            }
+            voice.stop()
+            offCourseHaptics.reset()
+        }
+        .onDisappear {
+            voice.stop()
+            offCourseHaptics.reset()
         }
     }
 

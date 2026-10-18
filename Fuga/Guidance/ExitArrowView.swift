@@ -31,10 +31,6 @@ struct ExitArrowView: View {
             DistanceLabel(meters: distanceMeters, relativeBearing: relativeBearing)
         }
         .animation(.easeInOut(duration: 0.25), value: isAligned)
-        // One firm tap the moment you turn to face the exit, nothing while you stay aligned.
-        .sensoryFeedback(.impact(weight: .heavy), trigger: isAligned) { wasAligned, nowAligned in
-            nowAligned && !wasAligned
-        }
         .onAppear { displayedAngle = Self.normalized(relativeBearing) }
         .onChange(of: relativeBearing) { _, newBearing in
             let delta = Self.shortestDelta(from: displayedAngle, to: newBearing)
