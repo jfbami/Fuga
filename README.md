@@ -42,6 +42,18 @@ How it stays on track: ARKit follows every step from the elevator. When you walk
 | `Fuga/Routes/*.json` | Routes made by `tools/mapping/route.py` |
 | `tools/mapping/` | Pipeline: floor plan PDF + LiDAR walk -> map, landmarks, routes. See its README |
 
+## Web demo (no Xcode needed)
+
+`web-demo/index.html` is a browser version of the guided walk, for testing without building the app:
+
+- **Start at the elevator:** uses the phone's compass and counts your steps (no camera tracking, so it's rougher than the app). Set your step length on the start screen.
+- **Simulate the walk:** walks the route on its own, with spoken turns. Works anywhere, including a laptop.
+- **Replay LiDAR walk:** plays back the real elevator-to-430 scan through the same guidance.
+
+Vibration works on Android only; on iPhone the screen edge flashes for turns instead.
+
+Deploy on Vercel: **Add New → Project**, import `jfbami/Fuga`, pick the `nav/route-guidance` branch, set **Root Directory** to `web-demo`, Framework Preset **Other**, no build command. Open the link on your phone and allow motion access when asked. The compass only works when the page is opened from its own link over HTTPS (Vercel is fine).
+
 ## Web preview (for phones without Xcode)
 
 `web-preview/index.html` is a browser copy of the arrow screen. Deploy it on Vercel so everyone can try it on their phone:
