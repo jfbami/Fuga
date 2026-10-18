@@ -1,0 +1,105 @@
+{
+  "frame": "plan meters (see floor.json); facingDegrees clockwise from plan up",
+  "heightNote": "heightMeters is relative to the camera height at the start of the scan",
+  "landmarks": [
+    {
+      "id": "lm-416",
+      "label": "416",
+      "kind": "room_number",
+      "name": "iLounge",
+      "x": 21.31,
+      "y": 19.76,
+      "heightMeters": 0.63,
+      "facingDegrees": 278.0,
+      "sightings": 2,
+      "spreadMeters": 0.06,
+      "unique": true,
+      "frames": [
+        4185,
+        4545
+      ]
+    },
+    {
+      "id": "lm-420",
+      "label": "420",
+      "kind": "room_number",
+      "name": "Student Services",
+      "x": 17.64,
+      "y": 13.72,
+      "heightMeters": 0.38,
+      "facingDegrees": 64.0,
+      "sightings": 3,
+      "spreadMeters": 1.17,
+      "unique": true,
+      "frames": [
+        4785,
+        4875,
+        5340
+      ]
+    },
+    {
+      "id": "lm-430-1",
+      "label": "430",
+      "kind": "room_number",
+      "name": "Computer Classroom",
+      "x": 23.54,
+      "y": 13.2,
+      "heightMeters": 0.57,
+      "facingDegrees": 308.0,
+      "sightings": 1,
+      "spreadMeters": 0.0,
+      "unique": true,
+      "frames": [
+        5145
+      ]
+    },
+    {
+      "id": "lm-430-2",
+      "label": "430",
+      "kind": "room_number",
+      "name": "Computer Classroom",
+      "x": 33.72,
+      "y": 13.08,
+      "heightMeters": 0.63,
+      "facingDegrees": 304.0,
+      "sightings": 1,
+      "spreadMeters": 0.0,
+      "unique": true,
+      "frames": [
+        6000
+      ]
+    },
+    {
+      "id": "lm-exit",
+      "label": "EXIT",
+      "kind": "exit_sign",
+      "name": "Exit sign",
+      "x": 18.82,
+      "y": 14.42,
+      "heightMeters": 1.59,
+      "facingDegrees": 38.0,
+      "sightings": 1,
+      "spreadMeters": 0.0,
+      "unique": false,
+      "frames": [
+        4875
+      ]
+    },
+    {
+      "id": "lm-ischool-sign",
+      "label": "iSchool sign",
+      "kind": "wall_sign",
+      "name": "Information School 'we make information work'",
+      "x": 16.26,
+      "y": 32.37,
+      "heightMeters": 0.46,
+      "facingDegrees": 353.0,
+      "sightings": 1,
+      "spreadMeters": 0.0,
+      "unique": false,
+      "frames": [
+        0
+      ]
+    }
+  ]
+}

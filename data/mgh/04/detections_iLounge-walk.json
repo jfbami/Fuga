@@ -1,0 +1,110 @@
+[
+ {
+  "frame": 4185,
+  "label": "416",
+  "kind": "room_number",
+  "name": "iLounge",
+  "box": [
+   535,
+   627,
+   92,
+   76
+  ]
+ },
+ {
+  "frame": 4545,
+  "label": "416",
+  "kind": "room_number",
+  "name": "iLounge",
+  "box": [
+   1418,
+   666,
+   138,
+   104
+  ]
+ },
+ {
+  "frame": 4785,
+  "label": "420",
+  "kind": "room_number",
+  "name": "Student Services",
+  "box": [
+   770,
+   366,
+   93,
+   72
+  ]
+ },
+ {
+  "frame": 4875,
+  "label": "420",
+  "kind": "room_number",
+  "name": "Student Services",
+  "box": [
+   461,
+   1146,
+   64,
+   56
+  ]
+ },
+ {
+  "frame": 5145,
+  "label": "430",
+  "kind": "room_number",
+  "name": "Computer Classroom",
+  "box": [
+   149,
+   745,
+   88,
+   72
+  ]
+ },
+ {
+  "frame": 5340,
+  "label": "420",
+  "kind": "room_number",
+  "name": "Student Services",
+  "box": [
+   845,
+   677,
+   43,
+   29
+  ]
+ },
+ {
+  "frame": 6000,
+  "label": "430",
+  "kind": "room_number",
+  "name": "Computer Classroom",
+  "box": [
+   1702,
+   242,
+   103,
+   100
+  ]
+ },
+ {
+  "frame": 0,
+  "label": "iSchool sign",
+  "kind": "wall_sign",
+  "name": "Information School 'we make information work'",
+  "box": [
+   932,
+   34,
+   396,
+   211
+  ]
+ },
+ {
+  "frame": 4875,
+  "label": "EXIT",
+  "kind": "exit_sign",
+  "name": "Exit sign",
+  "box": [
+   420,
+   160,
+   220,
+   200
+  ]
+ }
+]

@@ -1,8 +1,8 @@
 # Fuga
 
-**When you can't see the way out, Fuga can.**
+**Indoor directions, room to room.**
 
-Fuga guides you to the nearest exit of a building you don't know, even in smoke and without a connection. Each building is scanned once with a LiDAR iPhone; after that, any iPhone can find its position from the signs around it and point the way out.
+Fuga guides you through a building you don't know: pick a room, and the phone points the way with a Find My–style arrow, spoken turns and vibration. It's built for blind and low-vision people, new students and visitors. Each building is scanned once with a LiDAR iPhone and lined up with UW's floor plans; after that, any iPhone can be guided.
 
 Built at DubHacks '26.
 
@@ -17,23 +17,50 @@ Adding files: the `Fuga/` folder is synced with the project, so new Swift files 
 
 If the project won't open on your Xcode, regenerate it with [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen && xcodegen`.
 
-## What's here so far
+## Try it in Mary Gates Hall, 4th floor
+
+The floor's map ships inside the app, so anyone can open Fuga and go. No setup, no scanning.
+
+1. Open Fuga. Under **Where are you?**, pick the room or landmark you're closest to: the Elevator, 416 iLounge, 420 Student Services, or either door of 430 Computer Classroom.
+2. Stand in front of that door, facing it, phone upright. That tells Fuga exactly where you are and which way you're facing.
+3. Under **Where to?**, pick a room and tap **Start**. It tells you which way to turn first (usually "Turn around").
+4. Follow the arrow. It points along the route drawn on the map: down the hallway you're in, swinging to the next hallway just before each corner. The number under it is how far you still have to walk to the room.
+5. Look through the camera: a **solid green line on the hallway floor** runs from your feet to the room, like the route in Apple Maps, with a soft highlight sweeping along it. Walls the phone sees hide it where it turns a corner (Pro iPhones use the LiDAR 3D mesh; other iPhones use the wall planes ARKit detects).
+   The **3D map** at the top shows you as a blue arrow inside a cut-away model of the floor (low solid walls, glass above), with the route on the floor and the camera following behind you. Tap the map button to switch between 3D, flat and hidden. For real walls, generate `Fuga/Maps/mgh4_walls.json` locally with `tools/mapping/build_walls.py` (it comes from the NetID-only plans, so it isn't in this repo); without it the 3D view shows simple hallway walls.
+6. Vibration works like Find My: when you turn to face the way the arrow points, it turns green with a firm **snap**, then **taps** while you keep facing that way, faster and stronger as you get closer. Face the wrong way and it goes quiet. At a corner the arrow swings, the taps stop, and they come back when you've turned. Turns are also spoken 4 m ahead and at the corner, and on arrival a short burst plays, it says which side the door is on, and the arrow points at the door.
+7. Passing a room on the list? Tap **I'm at a landmark** and pick it to fix any drift. It re-plans the route from there.
+
+How it works: the landmark you pick pins your spot and direction on the UW floor plan. ARKit then follows every step with the camera and motion sensors. Walking straight down a hallway corrects the direction if you weren't facing the door squarely (tested: recovers a 28° error). Routes are computed on the phone over a small hallway graph (`Fuga/Maps/mgh4_graph.json`).
+
+## What's in the app
 
 | Path | What it is |
 | --- | --- |
-| `Fuga/Guidance/ExitArrowView.swift` | The bottom-center arrow, styled after Find My's precision-finding arrow. Takes a bearing relative to the phone and a distance. Turns green with a haptic tap when you face the exit |
-| `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale, plus the spoken description |
-| `Fuga/Demo/CompassDemo.swift` | Temporary driver: on a phone, tap **Exit is this way**, then turn around and the arrow keeps pointing there. In the Simulator it sweeps automatically |
-| `Fuga/ContentView.swift` | Main screen: camera placeholder, floor label, arrow |
+| `Fuga/Guidance/ExitArrowView.swift` | Find My–style arrow: bearing relative to the phone + distance. Turns green with a haptic tap when you face the right way |
+| `Fuga/Guidance/FloorPathNode.swift` | The solid green route line on the floor (camera view and 3D map) |
+| `Fuga/Navigation/Building3DView.swift` | 3D cut-away map of the floor with you and the route |
+| `Fuga/Guidance/FindMyHaptics.swift` | Find My–style vibration: snap when aligned, taps that speed up as you get closer, arrival burst (Core Haptics) |
+| `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale |
+| `Fuga/Navigation/RouteNavigator.swift` | ARKit tracking, landmark start and re-pin, hallway heading correction, spoken turns, vibration, arrival |
+| `Fuga/Navigation/HallwayGraph.swift` | Hallway graph + shortest route from any spot to a room's nearest door |
+| `Fuga/Navigation/RouteTracker.swift` | Route geometry: progress along the route, look-ahead target, turns (no ARKit, easy to test) |
+| `Fuga/Navigation/Route.swift` | Route model |
+| `Fuga/Navigation/MiniMap.swift` | Flat map |
+| `Fuga/Navigation/ARCameraView.swift` | Camera view; detected walls hide the floor line behind them |
+| `Fuga/Maps/` | Hallway graph with rooms, doors and landmarks |
+| `tools/mapping/` | Pipeline: floor plan PDF + LiDAR walk -> map, landmarks, routes. See its README |
 
-### Connecting real routing
+## Web demo (no Xcode needed)
 
-`ExitArrowView(relativeBearing:distanceMeters:)` is the whole interface:
+`web-demo/index.html` is a browser version of the guided walk, for testing without building the app:
 
-- `relativeBearing`: degrees from where the phone points to the next point on the route. `0` ahead, `+90` right, `-90` left, `±180` behind. Point at the next turn, not straight at the exit through walls.
-- `distanceMeters`: remaining distance along the route. Under 1.5 m it shows "Exit".
+- **Start at the elevator:** uses the phone's compass and counts your steps (no camera tracking, so it's rougher than the app). Set your step length on the start screen.
+- **Simulate the walk:** walks the route on its own, with spoken turns. Works anywhere, including a laptop.
+- **Replay LiDAR walk:** plays back the real elevator-to-430 scan through the same guidance.
 
-Replace `CompassDemo` with the router's output once localization and A* are in.
+Vibration works on Android only; on iPhone the screen edge flashes for turns instead.
+
+Deploy on Vercel: **Add New → Project**, import `jfbami/Fuga`, pick the `nav/route-guidance` branch, set **Root Directory** to `web-demo`, Framework Preset **Other**, no build command. Open the link on your phone and allow motion access when asked. The compass only works when the page is opened from its own link over HTTPS (Vercel is fine).
 
 ## Web preview (for phones without Xcode)
 

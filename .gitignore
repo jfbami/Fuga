@@ -18,3 +18,14 @@ build/
 
 # Floor plans from UW Space Viewer (NetID-only; don't publish)
 data/**/*.pdf
+
+# Generated from UW Space Viewer plans (NetID-only). Rebuild locally with tools/mapping/build_floor.py.
+data/**/floor.json
+data/**/grid.png
+
+# Python
+__pycache__/
+*.pyc
+
+# Wall model for the 3D view, from the UW plans (NetID-only). Build locally with tools/mapping/build_walls.py.
+Fuga/Maps/*_walls.json

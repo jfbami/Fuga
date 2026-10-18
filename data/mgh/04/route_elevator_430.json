@@ -1,0 +1,79 @@
+{
+  "from": {
+    "id": "400W",
+    "name": "400W"
+  },
+  "to": {
+    "id": "lm-430-1",
+    "name": "Computer Classroom"
+  },
+  "lengthMeters": 26.7,
+  "points": [
+    {
+      "x": 16.27,
+      "y": 36.67
+    },
+    {
+      "x": 16.27,
+      "y": 34.88
+    },
+    {
+      "x": 19.72,
+      "y": 31.88
+    },
+    {
+      "x": 19.88,
+      "y": 15.97
+    },
+    {
+      "x": 23.62,
+      "y": 13.57
+    }
+  ],
+  "steps": [
+    {
+      "action": "walk",
+      "meters": 1.8,
+      "say": "Walk 2 meters"
+    },
+    {
+      "action": "turn",
+      "direction": "left",
+      "degrees": 49,
+      "say": "Turn slightly left"
+    },
+    {
+      "action": "walk",
+      "meters": 4.6,
+      "say": "Walk 5 meters"
+    },
+    {
+      "action": "turn",
+      "direction": "right",
+      "degrees": 48,
+      "say": "Turn slightly right"
+    },
+    {
+      "action": "walk",
+      "meters": 15.9,
+      "say": "Walk 16 meters"
+    },
+    {
+      "action": "turn",
+      "direction": "left",
+      "degrees": 57,
+      "say": "Turn slightly left"
+    },
+    {
+      "action": "walk",
+      "meters": 4.5,
+      "say": "Walk 4 meters"
+    },
+    {
+      "action": "arrive",
+      "name": "Computer Classroom",
+      "side": "right",
+      "say": "Computer Classroom is on your right"
+    }
+  ]
+}

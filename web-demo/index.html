@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#262628">
+<title>Fuga Demo</title>
+<style>
+  /* Layout: one phone screen like the app. Start screen (destination picker) or guidance screen (instruction on top, mini map right, Find My arrow bottom-center). Single dark look. */
+  :root {
+    --bg-top: #262628;
+    --bg-bottom: #0e0e10;
+    --ink: #ffffff;
+    --ink-dim: rgba(255, 255, 255, 0.62);
+    --panel: rgba(255, 255, 255, 0.12);
+    --panel-strong: rgba(255, 255, 255, 0.2);
+    --puck: rgba(72, 72, 74, 0.8);
+    --go: #34c759;
+    --warn: #ffd60a;
+    --route: #34c759;
+    --you: #0a84ff;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; margin: 0; }
+  [hidden] { display: none !important; }
+  body {
+    background: linear-gradient(var(--bg-top), var(--bg-bottom));
+    background-color: var(--bg-bottom);
+    color: var(--ink);
+    font-family: var(--font);
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  video#cam { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+  .shade { position: fixed; inset: 0; z-index: 1; pointer-events: none;
+    background: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0) 40%, rgba(0,0,0,0.6)); }
+  .screen {
+    position: relative; z-index: 2;
+    height: 100%; box-sizing: border-box;
+    display: flex; flex-direction: column; gap: 14px;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    padding-block: 14px 18px;
+  }
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.05em; color: var(--ink-dim); text-transform: uppercase; }
+  h1 { font-family: var(--font-display); font-size: 34px; margin: 2px 0 0; line-height: 1.1; }
+  .dest-list { display: flex; flex-direction: column; gap: 10px; }
+  .dest {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 16px; border-radius: 16px; border: 0; text-align: left;
+    background: var(--panel); color: var(--ink); font: inherit; cursor: pointer;
+  }
+  .dest[aria-pressed="true"] { background: var(--go); }
+  .dest b { font-family: var(--font-display); font-size: 22px; display: block; }
+  .dest span { font-size: 15px; }
+  .dest .check { font-size: 22px; opacity: 0; }
+  .dest[aria-pressed="true"] .check { opacity: 1; }
+  .spacer { flex: 1; }
+  .note { font-size: 16px; line-height: 1.4; max-width: 60ch; }
+  .small { font-size: 13px; color: var(--ink-dim); line-height: 1.4; }
+  .warn { color: var(--warn); font-size: 14px; font-weight: 600; }
+  button.primary, button.secondary, button.chip {
+    font: 600 17px/1 var(--font); color: var(--ink); border: 0; cursor: pointer;
+  }
+  button.primary { background: var(--go); border-radius: 14px; padding: 17px; width: 100%; }
+  button.secondary { background: var(--panel); border-radius: 14px; padding: 14px; flex: 1; font-size: 15px; }
+  button.chip { background: var(--panel); border-radius: 999px; padding: 9px 13px; font-size: 14px; }
+  button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .settings { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-dim); }
+  .settings output { min-width: 44px; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  /* Guidance */
+  .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .dest-title { font-family: var(--font-display); font-size: 24px; font-weight: 700; margin-top: 2px; }
+  .instruction { font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.25; min-height: 1.25em; }
+  .mid { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .status { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  canvas#map { width: 150px; height: 190px; border-radius: 14px; background: rgba(0,0,0,0.35); flex: none; }
+  .stage { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 10px; }
+  .puck { width: 168px; height: 168px; max-width: 100%; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.35)); }
+  .puck circle.base { fill: var(--puck); transition: fill 0.25s ease-in-out; }
+  .puck.aligned circle.base { fill: var(--go); }
+  .distance { text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,0.45); }
+  .distance .num { font-family: var(--font-display); font-size: 44px; font-variant-numeric: tabular-nums; }
+  .distance .unit { color: rgba(255,255,255,0.5); }
+  .distance .dir { font-family: var(--font-display); font-size: 26px; }
+  .flash { position: fixed; inset: 0; z-index: 3; pointer-events: none; border: 0 solid var(--go); transition: border-width 0.15s; }
+  .flash.on { border-width: 10px; }
+  @media (prefers-reduced-motion: reduce) { .puck circle.base, .flash { transition: none; } }
+</style>
+</head>
+<body>
+
+<video id="cam" playsinline muted hidden></video>
+<div class="shade"></div>
+<div class="flash" id="flash"></div>
+
+<main class="screen" id="startScreen">
+  <div>
+    <div class="eyebrow">Mary Gates Hall · 4th floor</div>
+    <h1>Where to?</h1>
+  </div>
+  <div class="dest-list" id="destList"></div>
+  <div class="spacer"></div>
+  <p class="note">Step out of the elevator and face straight down the hallway. Hold your phone upright, then tap Start.</p>
+  <p class="small">Web demo: uses your phone's compass and counts your steps. The iOS app uses the camera instead, which is more accurate. Vibration works on Android only; iPhones flash the screen edge instead.</p>
+  <div class="settings">
+    <label for="stepLen">Step length</label>
+    <input id="stepLen" type="range" min="0.5" max="0.9" step="0.05" value="0.7">
+    <output id="stepLenOut">0.70 m</output>
+  </div>
+  <p class="warn" id="startWarn" hidden></p>
+  <button class="primary" id="startBtn" type="button">Start at the elevator</button>
+  <div class="row">
+    <button class="secondary" id="simBtn" type="button">Simulate the walk</button>
+    <button class="secondary" id="replayBtn" type="button">Replay LiDAR walk</button>
+  </div>
+</main>
+
+<main class="screen" id="navScreen" hidden>
+  <div class="top">
+    <div>
+      <div class="eyebrow" id="modeLabel">To · 4th floor</div>
+      <div class="dest-title" id="destTitle"></div>
+    </div>
+    <button class="chip" id="camBtn" type="button">Camera</button>
+  </div>
+  <div class="mid">
+    <div class="status">
+      <div class="instruction" id="instruction" aria-live="polite"></div>
+      <div class="warn" id="navWarn" hidden></div>
+      <div class="small" id="debug"></div>
+    </div>
+    <canvas id="map" width="300" height="380" aria-hidden="true"></canvas>
+  </div>
+  <section class="stage">
+    <svg class="puck" id="puck" viewBox="-84 -84 168 168" role="img" aria-label="Direction to go">
+      <circle class="base" r="84"></circle>
+      <g id="glyph" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <path id="arrowPath"></path>
+        <circle id="dot" fill="#fff" stroke="none"></circle>
+      </g>
+    </svg>
+    <div class="distance">
+      <div class="num" id="numOut">–</div>
+      <div class="dir" id="dirOut"></div>
+    </div>
+  </section>
+  <div class="row">
+    <button class="secondary" id="endBtn" type="button">End</button>
+    <button class="secondary" id="recalBtn" type="button">I'm at the elevator</button>
+  </div>
+</main>
+
+<script>
+(() => {
+  const DATA = {"routes":{"430":{"from":{"id":"400W","name":"400W"},"to":{"id":"lm-430-1","name":"Computer Classroom"},"lengthMeters":26.7,"points":[{"x":16.27,"y":36.67},{"x":16.27,"y":34.88},{"x":19.72,"y":31.88},{"x":19.88,"y":15.97},{"x":23.62,"y":13.57}],"steps":[{"action":"walk","meters":1.8,"say":"Walk 2 meters"},{"action":"turn","direction":"left","degrees":49,"say":"Turn slightly left"},{"action":"walk","meters":4.6,"say":"Walk 5 meters"},{"action":"turn","direction":"right","degrees":48,"say":"Turn slightly right"},{"action":"walk","meters":15.9,"say":"Walk 16 meters"},{"action":"turn","direction":"left","degrees":57,"say":"Turn slightly left"},{"action":"walk","meters":4.5,"say":"Walk 4 meters"},{"action":"arrive","name":"Computer Classroom","side":"right","say":"Computer Classroom is on your right"}]},"416":{"from":{"id":"400W","name":"400W"},"to":{"id":"416","name":"416 iLounge"},"lengthMeters":18.6,"points":[{"x":16.27,"y":36.67},{"x":16.27,"y":34.88},{"x":19.57,"y":32.48},{"x":19.88,"y":21.22},{"x":20.93,"y":20.18}],"steps":[{"action":"walk","meters":1.8,"say":"Walk 2 meters"},{"action":"turn","direction":"left","degrees":54,"say":"Turn slightly left"},{"action":"walk","meters":4.1,"say":"Walk 4 meters"},{"action":"turn","direction":"right","degrees":52,"say":"Turn slightly right"},{"action":"walk","meters":11.3,"say":"Walk 11 meters"},{"action":"turn","direction":"left","degrees":43,"say":"Turn slightly left"},{"action":"walk","meters":1.5,"say":"Walk 2 meters"},{"action":"arrive","name":"416 iLounge","side":"left","say":"416 iLounge is on your left"}]}},"walk":[[0.0,15.71,36.67],[0.5,15.8,36.66],[1.0,15.91,36.67],[1.5,15.91,36.68],[2.0,15.82,36.66],[2.5,15.73,36.63],[3.0,15.71,36.6],[3.5,15.76,36.58],[4.0,15.72,36.7],[4.5,15.77,36.78],[5.0,15.82,36.73],[5.5,15.92,36.56],[6.0,16.01,36.34],[6.5,16.04,36.15],[7.0,16.06,36.08],[7.5,16.09,36.07],[8.0,16.05,35.92],[8.5,15.97,35.68],[9.0,16.03,35.43],[9.5,16.07,35.18],[10.0,16.05,34.93],[10.5,16.2,34.75],[11.0,16.49,34.64],[11.5,16.64,34.58],[12.0,16.65,34.49],[12.5,16.71,34.43],[13.0,16.7,34.48],[13.5,16.65,34.47],[14.0,16.65,34.37],[14.5,16.58,34.19],[15.0,16.43,34.18],[15.5,16.37,34.23],[16.0,16.38,34.37],[16.5,16.43,34.65],[17.0,16.35,34.67],[17.5,16.27,34.53],[18.0,16.29,34.51],[18.5,16.37,34.5],[19.0,16.34,34.14],[19.5,16.57,33.82],[20.0,16.76,33.89],[20.5,17.01,33.96],[21.0,17.18,34.0],[21.5,17.33,33.83],[22.0,17.51,33.79],[22.5,17.73,33.84],[23.0,17.96,33.78],[23.5,18.15,33.77],[24.0,18.39,33.75],[24.5,18.52,33.57],[25.0,18.6,33.4],[25.5,18.72,33.31],[26.0,18.83,33.3],[26.5,18.86,33.17],[27.0,18.84,33.07],[27.5,18.84,33.07],[28.0,18.89,33.09],[28.5,19.04,33.12],[29.0,19.22,33.25],[29.5,19.31,33.47],[30.0,19.3,33.78],[30.5,19.14,33.84],[31.0,18.95,33.84],[31.5,18.85,33.79],[32.0,18.87,33.74],[32.5,19.02,33.74],[33.0,19.17,33.81],[33.5,19.16,33.86],[34.0,19.05,33.88],[34.5,19.04,33.94],[35.0,19.07,33.92],[35.5,19.15,33.69],[36.0,19.08,33.46],[36.5,19.16,33.33],[37.0,19.21,33.34],[37.52,19.28,33.3],[38.02,19.4,33.15],[38.52,19.55,33.2],[39.02,19.65,33.06],[39.52,19.5,32.78],[40.02,19.51,32.62],[40.52,19.61,32.42],[41.02,19.57,32.17],[41.52,19.47,31.88],[42.02,19.45,31.66],[42.52,19.42,31.5],[43.02,19.55,31.31],[43.52,19.68,31.21],[44.02,19.68,31.18],[44.52,19.59,31.35],[45.02,19.57,31.5],[45.52,19.62,31.28],[46.02,19.87,30.89],[46.52,19.96,30.62],[47.02,19.86,30.32],[47.52,19.75,29.98],[48.02,19.57,29.81],[48.52,19.36,29.78],[49.02,19.42,29.6],[49.52,19.51,29.33],[50.02,19.45,29.18],[50.52,19.33,29.18],[51.02,19.34,28.97],[51.52,19.5,28.66],[52.02,19.64,28.63],[52.52,19.51,28.66],[53.02,19.44,28.72],[53.52,19.44,28.6],[54.02,19.43,28.37],[54.52,19.57,28.12],[55.02,19.77,27.81],[55.52,19.72,27.48],[56.02,19.72,27.23],[56.52,19.76,26.99],[57.02,19.5,26.88],[57.52,19.4,26.67],[58.02,19.42,26.49],[58.52,19.34,26.15],[59.02,19.38,26.0],[59.52,19.49,25.72],[60.02,19.46,25.35],[60.52,19.4,24.97],[61.02,19.47,24.61],[61.52,19.47,24.32],[62.02,19.49,23.99],[62.52,19.66,23.72],[63.02,19.8,23.53],[63.52,19.87,23.25],[64.02,20.01,23.19],[64.52,20.14,23.18],[65.05,20.09,23.04],[65.72,20.07,22.86],[66.29,19.93,22.68],[66.87,19.69,22.61],[67.5,19.47,22.67],[68.17,19.59,22.62],[68.77,19.72,22.12],[69.32,19.8,21.86],[69.85,19.95,21.63],[70.42,19.99,21.24],[70.92,19.96,20.93],[71.42,20.04,20.64],[71.97,19.96,20.32],[72.47,19.78,20.05],[73.05,19.72,19.86],[73.65,19.75,19.6],[74.32,19.75,19.28],[74.9,19.93,19.08],[75.49,20.11,18.79],[76.0,20.21,18.7],[76.57,20.41,18.68],[77.15,20.43,18.72],[77.65,20.27,18.73],[78.15,20.02,18.6],[78.67,19.82,18.4],[79.36,19.95,17.83],[79.86,19.97,17.42],[80.37,19.88,17.1],[80.87,19.69,16.73],[81.42,19.43,16.37],[81.99,19.44,16.08],[82.57,19.65,15.89],[83.16,19.64,15.64],[83.77,19.76,15.36],[84.32,20.22,15.21],[84.82,20.46,15.21],[85.32,20.62,15.02],[85.82,20.86,14.83],[86.32,21.2,14.64],[86.92,21.51,14.45],[87.62,21.79,14.41],[88.41,21.96,14.33],[89.16,22.31,14.44],[89.89,22.71,14.57],[90.52,22.94,14.71],[91.26,23.12,14.89],[92.01,23.09,14.63],[92.59,23.1,14.28],[93.21,23.27,14.02],[93.74,23.57,13.95],[94.27,24.09,13.94],[94.92,24.57,14.28],[95.51,24.81,14.62],[96.06,25.17,14.74],[96.56,25.52,14.55],[97.06,25.92,14.33],[97.56,26.33,14.25],[98.06,26.71,14.21],[98.56,27.09,14.34],[99.14,27.36,14.33],[99.67,27.56,13.99],[100.19,27.88,13.8],[100.69,28.28,13.87],[101.19,28.61,14.01],[101.72,29.13,14.03],[102.36,29.66,14.3],[102.99,30.23,14.56],[103.64,30.77,14.5],[104.22,31.31,14.43],[104.76,31.68,14.26],[105.26,32.14,14.14],[105.76,32.64,14.09]],"landmarks":[{"label":"416","name":"iLounge","x":21.31,"y":19.76,"kind":"room_number"},{"label":"420","name":"Student Services","x":17.64,"y":13.72,"kind":"room_number"},{"label":"430","name":"Computer Classroom","x":23.54,"y":13.2,"kind":"room_number"},{"label":"430","name":"Computer Classroom","x":33.72,"y":13.08,"kind":"room_number"},{"label":"EXIT","name":"Exit sign","x":18.82,"y":14.42,"kind":"exit_sign"},{"label":"iSchool sign","name":"Information School 'we make information work'","x":16.26,"y":32.37,"kind":"wall_sign"}]};
+  const START_FACING = -90; // plan degrees: straight out of the elevator, down the page
+  const DESTS = [
+    { id: '430', title: '430', subtitle: 'Computer Classroom' },
+    { id: '416', title: '416', subtitle: 'iLounge' },
+  ];
+
+  // ---------- math (same as RouteTracker.swift) ----------
+  const wrap = d => { d = d % 360; if (d > 180) d -= 360; if (d <= -180) d += 360; return d; };
+  const ang = (v) => Math.atan2(v[1], v[0]) * 180 / Math.PI;
+  const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+  const len = v => Math.hypot(v[0], v[1]);
+
+  class Tracker {
+    constructor(points) {
+      this.p = points.map(q => [q.x, q.y]);
+      this.cum = [0];
+      for (let i = 1; i < this.p.length; i++) this.cum.push(this.cum[i - 1] + len(sub(this.p[i], this.p[i - 1])));
+      this.total = this.cum[this.cum.length - 1];
+      this.turns = [];
+      for (let k = 1; k < this.p.length - 1; k++) {
+        const d = wrap(ang(sub(this.p[k + 1], this.p[k])) - ang(sub(this.p[k], this.p[k - 1])));
+        if (Math.abs(d) >= 25) this.turns.push({ v: k, along: this.cum[k], deg: d, next: this.cum[k + 1] - this.cum[k] });
+      }
+      this.seg = 0;
+    }
+    segAt(s) { for (let i = 0; i < this.p.length - 1; i++) if (s <= this.cum[i + 1]) return i; return this.p.length - 2; }
+    segAngle(i) { return ang(sub(this.p[i + 1], this.p[i])); }
+    point(s) {
+      s = Math.min(Math.max(0, s), this.total);
+      const i = this.segAt(s), L = this.cum[i + 1] - this.cum[i], t = L > 0 ? (s - this.cum[i]) / L : 0;
+      return [this.p[i][0] + (this.p[i + 1][0] - this.p[i][0]) * t, this.p[i][1] + (this.p[i + 1][1] - this.p[i][1]) * t];
+    }
+    project(q) {
+      const cl = i => {
+        const a = this.p[i], ab = sub(this.p[i + 1], a), l2 = Math.max(ab[0] * ab[0] + ab[1] * ab[1], 1e-9);
+        const t = Math.min(1, Math.max(0, ((q[0] - a[0]) * ab[0] + (q[1] - a[1]) * ab[1]) / l2));
+        return [this.cum[i] + t * Math.sqrt(l2), len(sub(q, [a[0] + ab[0] * t, a[1] + ab[1] * t]))];
+      };
+      let best = [this.seg, 0, Infinity];
+      const lo = Math.max(0, this.seg - 1), hi = Math.min(this.p.length - 2, this.seg + 2);
+      for (let i = lo; i <= hi; i++) { const [al, d] = cl(i); if (d < best[2]) best = [i, al, d]; }
+      if (best[2] > 4) for (let i = 0; i < this.p.length - 1; i++) { const [al, d] = cl(i); if (d < best[2]) best = [i, al, d]; }
+      this.seg = best[0];
+      return { along: best[1], off: best[2] };
+    }
+    nextTurn(s) { return this.turns.find(t => t.along > s - 0.5); }
+  }
+  const relBearing = (pos, heading, target) => wrap(heading - ang(sub(target, pos))); // + = clockwise (right)
+
+  // ---------- arrow (same geometry as ExitArrowView.swift) ----------
+  (function drawArrow() {
+    const S = 168, lw = S * 0.095, w = S * 0.40, h = S * 0.52, off = S * 0.04, a = 42 * Math.PI / 180;
+    const head = Math.min(h * 0.5, (w / 2) / Math.sin(a)), dx = head * Math.sin(a), dy = head * Math.cos(a);
+    const tip = -h / 2 + off, tail = h / 2 + off;
+    const path = document.getElementById('arrowPath');
+    path.setAttribute('d', `M0 ${tail} L0 ${tip} M${-dx} ${tip + dy} L0 ${tip} L${dx} ${tip + dy}`);
+    path.setAttribute('stroke-width', lw);
+    const dot = document.getElementById('dot');
+    dot.setAttribute('cy', -S * 0.40); dot.setAttribute('r', S * 0.0375);
+  })();
+
+  // ---------- elements ----------
+  const $ = id => document.getElementById(id);
+  const startScreen = $('startScreen'), navScreen = $('navScreen');
+  const usesFeet = /-US$|^en$/i.test(navigator.language || 'en-US');
+  let chosen = DESTS[0];
+
+  function renderDests() {
+    const list = $('destList'); list.textContent = '';
+    for (const d of DESTS) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'dest'; b.setAttribute('aria-pressed', String(d === chosen));
+      const left = document.createElement('div');
+      const t = document.createElement('b'); t.textContent = d.title;
+      const s = document.createElement('span'); s.textContent = d.subtitle;
+      left.append(t, s);
+      const c = document.createElement('div'); c.className = 'check'; c.textContent = '✓';
+      b.append(left, c);
+      b.addEventListener('click', () => { chosen = d; renderDests(); });
+      list.append(b);
+    }
+  }
+  renderDests();
+  const stepLen = $('stepLen');
+  stepLen.addEventListener('input', () => { $('stepLenOut').textContent = Number(stepLen.value).toFixed(2) + ' m'; });
+
+  // ---------- speech, vibration ----------
+  const synth = window.speechSynthesis;
+  function say(text) {
+    if (!synth) return;
+    try { synth.cancel(); const u = new SpeechSynthesisUtterance(text); u.rate = 1.0; synth.speak(u); } catch (e) {}
+  }
+  function buzz(pattern) {
+    let did = false;
+    try { if (navigator.vibrate) did = navigator.vibrate(pattern); } catch (e) {}
+    const f = $('flash'); f.classList.add('on'); setTimeout(() => f.classList.remove('on'), 350);
+    return did;
+  }
+
+  // ---------- navigation state ----------
+  const nav = {
+    mode: 'idle', source: null, route: null, tracker: null,
+    s: 0, pos: null, heading: START_FACING, arrived: false,
+    soon: new Set(), now: new Set(),
+    offset: 0, compass: null, compassAt: 0, steps: 0, stepHeadings: [],
+    simT: 0, replayT: 0, shown: 0, vel: 0, wasAligned: null, last: 0,
+  };
+
+  function begin(source) {
+    const route = DATA.routes[chosen.id];
+    Object.assign(nav, {
+      mode: 'nav', source, route, tracker: new Tracker(route.points), s: 0, arrived: false,
+      soon: new Set(), now: new Set(), steps: 0, stepHeadings: [], simT: 0, replayT: 0,
+      heading: START_FACING, pos: [route.points[0].x, route.points[0].y],
+    });
+    nav.shown = 0; nav.vel = 0; nav.wasAligned = null;
+    if (source === 'sensors' && nav.compass !== null) nav.offset = START_FACING + nav.compass;
+    $('destTitle').textContent = `${chosen.title} ${chosen.subtitle}`;
+    $('modeLabel').textContent = source === 'sensors' ? 'To · compass + steps' : source === 'sim' ? 'To · simulated walk' : 'To · replaying your LiDAR walk';
+    $('recalBtn').hidden = source !== 'sensors';
+    startScreen.hidden = true; navScreen.hidden = false;
+    const first = route.steps.find(s => s.action === 'walk');
+    say(`Going to ${route.to.name}, ${Math.round(route.lengthMeters)} meters. ${first ? first.say + '.' : ''}`);
+    $('instruction').textContent = route.steps[0].say;
+  }
+
+  function end() {
+    nav.mode = 'idle';
+    try { synth && synth.cancel(); } catch (e) {}
+    navScreen.hidden = true; startScreen.hidden = false;
+  }
+
+  // ---------- sensors: compass + steps ----------
+  let sensorsOn = false;
+  function onOrientation(e) {
+    let c = null;
+    if (typeof e.webkitCompassHeading === 'number') c = e.webkitCompassHeading;          // iOS: clockwise from north
+    else if (e.absolute && typeof e.alpha === 'number') c = (360 - e.alpha) % 360;      // Android absolute
+    if (c === null) return;
+    nav.compass = c; nav.compassAt = performance.now();
+  }
+  let mag = 9.81, above = false, lastStep = 0;
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity; if (!a || a.x === null) return;
+    const m = Math.hypot(a.x, a.y, a.z);
+    mag = mag * 0.8 + m * 0.2;                       // smooth
+    const now = performance.now();
+    if (!above && mag > 10.7) above = true;
+    else if (above && mag < 9.9) {
+      above = false;
+      if (now - lastStep > 280) { lastStep = now; onStep(); }
+    }
+  }
+  async function enableSensors() {
+    try {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        if (await DeviceOrientationEvent.requestPermission() !== 'granted') throw new Error('orientation denied');
+      }
+      if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        if (await DeviceMotionEvent.requestPermission() !== 'granted') throw new Error('motion denied');
+      }
+    } catch (e) { return false; }
+    if (!sensorsOn) {
+      window.addEventListener('deviceorientationabsolute', onOrientation);
+      window.addEventListener('deviceorientation', onOrientation);
+      window.addEventListener('devicemotion', onMotion);
+      sensorsOn = true;
+    }
+    return true;
+  }
+
+  function onStep() {
+    if (nav.mode !== 'nav' || nav.source !== 'sensors') return;
+    const tr = nav.tracker, L = Number(stepLen.value);
+    nav.steps++;
+    const i = tr.segAt(nav.s);
+    // Count the step toward the route if you're facing along the current segment,
+    // or along the next one when you're close to a corner.
+    const dirs = [tr.segAngle(i)];
+    if (i + 1 < tr.p.length - 1 && tr.cum[i + 1] - nav.s < 3) dirs.push(tr.segAngle(i + 1));
+    const diff = Math.min(...dirs.map(d => Math.abs(wrap(nav.heading - d))));
+    if (diff < 70) nav.s = Math.min(tr.total, nav.s + L);
+    else if (diff > 115) nav.s = Math.max(0, nav.s - L);
+    // Hallway heading correction: a straight run of steps along a long segment tells us
+    // which way the hallway really points (compasses drift near steel).
+    nav.stepHeadings.push(nav.heading); if (nav.stepHeadings.length > 6) nav.stepHeadings.shift();
+    const segLen = tr.cum[i + 1] - tr.cum[i];
+    if (nav.stepHeadings.length === 6 && segLen >= 5) {
+      const ref = nav.stepHeadings[0];
+      const spread = Math.max(...nav.stepHeadings.map(h => Math.abs(wrap(h - ref))));
+      const mean = ref + nav.stepHeadings.reduce((acc, h) => acc + wrap(h - ref), 0) / 6;
+      const delta = wrap(tr.segAngle(i) - mean);
+      if (spread < 15 && Math.abs(delta) < 40) nav.offset += 0.2 * delta;
+    }
+  }
+
+  // ---------- per-frame update ----------
+  function update(dt) {
+    const tr = nav.tracker;
+    if (nav.source === 'sensors') {
+      if (nav.compass !== null) nav.heading = nav.offset - nav.compass;
+      nav.pos = tr.point(nav.s);
+      const fresh = performance.now() - nav.compassAt < 2000;
+      $('navWarn').hidden = fresh;
+      if (!fresh) $('navWarn').textContent = 'No compass reading yet. Open this page from its own link (not inside another app) and allow motion access.';
+      $('debug').textContent = `Steps ${nav.steps} · ${nav.s.toFixed(1)} of ${tr.total.toFixed(1)} m`;
+    } else if (nav.source === 'sim') {
+      nav.simT += dt;
+      nav.s = Math.min(tr.total, nav.s + 1.25 * dt);
+      nav.pos = tr.point(nav.s);
+      // Heading turns toward the route at 120°/s, so the arrow swings at corners like a real walker.
+      const want = ang(sub(tr.point(nav.s + 2.5), nav.pos)) + 10 * Math.sin(nav.simT * 1.7);
+      const d = wrap(want - nav.heading);
+      nav.heading += Math.sign(d) * Math.min(Math.abs(d), 120 * dt);
+      $('debug').textContent = `Simulated walk · ${nav.s.toFixed(1)} of ${tr.total.toFixed(1)} m`;
+    } else if (nav.source === 'replay') {
+      nav.replayT += dt;
+      const W = DATA.walk;
+      let k = W.findIndex(p => p[0] >= nav.replayT); if (k < 1) k = k === 0 ? 1 : W.length - 1;
+      const a = W[k - 1], b = W[k], t = Math.min(1, Math.max(0, (nav.replayT - a[0]) / ((b[0] - a[0]) || 1)));
+      nav.pos = [a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t];
+      const back = W[Math.max(0, k - 4)];
+      if (len(sub(nav.pos, [back[1], back[2]])) > 0.3) {
+        const want = ang(sub(nav.pos, [back[1], back[2]]));
+        const d = wrap(want - nav.heading);
+        nav.heading += Math.sign(d) * Math.min(Math.abs(d), 150 * dt);
+      }
+      nav.s = tr.project(nav.pos).along;
+      $('debug').textContent = `Your LiDAR walk · ${nav.replayT.toFixed(0)} s of ${W[W.length - 1][0].toFixed(0)} s`;
+      if (nav.replayT > W[W.length - 1][0] + 2 && !nav.arrived) { $('instruction').textContent = 'Replay finished'; }
+    }
+
+    const remaining = Math.max(0, tr.total - nav.s);
+    const target = remaining < 1.5 ? tr.p[tr.p.length - 1] : tr.point(nav.s + 2.5);
+    const rel = relBearing(nav.pos, nav.heading, target);
+    renderArrow(rel, remaining, dt);
+    drawMap();
+
+    if (remaining < 1.5) {
+      if (!nav.arrived) {
+        nav.arrived = true;
+        const arrive = nav.route.steps[nav.route.steps.length - 1].say;
+        $('instruction').textContent = arrive; say(arrive); buzz([300]);
+      }
+      return;
+    }
+    const turn = tr.nextTurn(nav.s);
+    if (!turn) { $('instruction').textContent = `${Math.round(remaining)} meters to ${nav.route.to.name}`; return; }
+    const toTurn = turn.along - nav.s;
+    const side = turn.deg > 0 ? 'left' : 'right';
+    const spoken = Math.abs(turn.deg) < 60 ? `turn slightly ${side}` : `turn ${side}`;
+    if (toTurn <= 1.2 && !nav.now.has(turn.v)) {
+      nav.now.add(turn.v); nav.soon.add(turn.v);
+      say(`${spoken[0].toUpperCase() + spoken.slice(1)} now, then walk ${Math.round(turn.next)} meters.`);
+      buzz(turn.deg > 0 ? [90, 130, 90] : [90, 130, 90, 130, 90]);
+    } else if (toTurn <= 4 && !nav.soon.has(turn.v)) {
+      nav.soon.add(turn.v);
+      say(`In ${Math.max(1, Math.round(toTurn))} meters, ${spoken}.`);
+    }
+    $('instruction').textContent = toTurn > 1.2 ? `In ${Math.max(1, Math.round(toTurn))} m, ${spoken}` : spoken[0].toUpperCase() + spoken.slice(1);
+  }
+
+  function renderArrow(rel, meters, dt) {
+    const goal = nav.shown + wrap(rel - nav.shown);
+    nav.vel += (170 * (goal - nav.shown) - 22 * nav.vel) * dt;
+    nav.shown += nav.vel * dt;
+    $('glyph').setAttribute('transform', `rotate(${nav.shown})`);
+    const aligned = Math.abs(rel) <= 20;
+    if (aligned !== nav.wasAligned) {
+      $('puck').classList.toggle('aligned', aligned);
+      if (aligned && nav.wasAligned === false) { try { navigator.vibrate && navigator.vibrate(25); } catch (e) {} }
+      nav.wasAligned = aligned;
+    }
+    const m = Math.abs(rel), dir = m <= 20 ? 'ahead' : m >= 135 ? 'behind you' : rel > 0 ? 'to your right' : 'to your left';
+    const num = $('numOut');
+    if (meters < 1.5) { num.textContent = 'Here'; $('dirOut').textContent = ''; }
+    else {
+      const v = usesFeet ? Math.round(meters * 3.28084) : Math.round(meters), u = usesFeet ? 'ft' : 'm';
+      num.textContent = v + ' '; const span = document.createElement('span'); span.className = 'unit'; span.textContent = u; num.append(span);
+      $('dirOut').textContent = dir;
+    }
+    $('puck').setAttribute('aria-label', meters < 1.5 ? "You've arrived" : `${Math.round(meters)} meters to go, ${dir}`);
+  }
+
+  // ---------- mini map ----------
+  const map = $('map'), ctx = map.getContext('2d');
+  function drawMap() {
+    const W = map.width, H = map.height, pad = 22, tr = nav.tracker;
+    ctx.clearRect(0, 0, W, H);
+    const pts = tr.p.concat(nav.pos ? [nav.pos] : []);
+    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const span = Math.max(maxX - minX, maxY - minY, 1), sc = (Math.min(W, H) - 2 * pad) / span;
+    const ox = (W - (maxX - minX) * sc) / 2, oy = (H - (maxY - minY) * sc) / 2;
+    const P = p => [ox + (p[0] - minX) * sc, H - oy - (p[1] - minY) * sc];
+    if (nav.source === 'replay') {
+      ctx.strokeStyle = 'rgba(10,132,255,0.45)'; ctx.lineWidth = 3; ctx.beginPath();
+      DATA.walk.forEach((w, i) => { const q = P([w[1], w[2]]); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); });
+      ctx.stroke();
+    }
+    ctx.strokeStyle = '#34c759'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.beginPath(); tr.p.forEach((p, i) => { const q = P(p); i ? ctx.lineTo(q[0], q[1]) : ctx.moveTo(q[0], q[1]); }); ctx.stroke();
+    const e = P(tr.p[tr.p.length - 1]); ctx.fillStyle = '#fff'; ctx.fillRect(e[0] - 7, e[1] - 7, 14, 14);
+    if (nav.pos) {
+      const q = P(nav.pos), h = nav.heading * Math.PI / 180;
+      ctx.fillStyle = 'rgba(10,132,255,0.35)'; ctx.beginPath(); ctx.moveTo(q[0], q[1]);
+      for (let a = -0.45; a <= 0.451; a += 0.15) ctx.lineTo(q[0] + 40 * Math.cos(h + a), q[1] - 40 * Math.sin(h + a));
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#0a84ff'; ctx.strokeStyle = '#fff'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(q[0], q[1], 10, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    }
+  }
+
+  // ---------- camera background (optional) ----------
+  let camStream = null;
+  $('camBtn').addEventListener('click', async () => {
+    const v = $('cam');
+    if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; v.hidden = true; return; }
+    try {
+      camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+      v.srcObject = camStream; v.hidden = false; await v.play();
+    } catch (e) {
+      $('navWarn').hidden = false; $('navWarn').textContent = "Camera isn't available here.";
+    }
+  });
+
+  // ---------- buttons ----------
+  function unlockSpeech() { try { synth && synth.speak(new SpeechSynthesisUtterance(' ')); } catch (e) {} }
+  $('startBtn').addEventListener('click', async () => {
+    unlockSpeech();
+    const ok = await enableSensors();
+    if (!ok) { $('startWarn').hidden = false; $('startWarn').textContent = 'Motion access was denied. Allow it in Safari settings, or try Simulate.'; return; }
+    // Give the compass a moment to report before pinning the start direction.
+    const t0 = performance.now();
+    while (nav.compass === null && performance.now() - t0 < 1500) await new Promise(r => setTimeout(r, 100));
+    $('startWarn').hidden = true;
+    begin('sensors');
+  });
+  $('simBtn').addEventListener('click', () => { unlockSpeech(); begin('sim'); });
+  $('replayBtn').addEventListener('click', () => { unlockSpeech(); chosen = DESTS[0]; renderDests(); begin('replay'); });
+  $('endBtn').addEventListener('click', end);
+  $('recalBtn').addEventListener('click', () => { if (nav.source === 'sensors') begin('sensors'); });
+
+  function loop(now) {
+    const dt = Math.min(0.05, (now - (nav.last || now)) / 1000); nav.last = now;
+    if (nav.mode === 'nav') update(dt);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>

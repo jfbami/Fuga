@@ -2,15 +2,17 @@ import SwiftUI
 
 /// The bottom-center guidance arrow, styled after Apple Find My's precision-finding arrow:
 /// a thick white arrow with rounded ends, a small dot marking the target, a puck that turns
-/// green when you're facing the exit, and the distance in large type underneath.
+/// green when you're facing the way to go, and the distance in large type underneath.
 ///
 /// Feed it a bearing *relative to where the phone is pointing*:
 /// 0 = straight ahead, +90 = to the right, -90 = to the left, ±180 = behind.
 struct ExitArrowView: View {
-    /// Degrees from the phone's forward direction to the next point on the route. Positive is clockwise (right).
+    /// Degrees from the phone's forward direction to the way the route goes. Positive is clockwise (right).
     var relativeBearing: Double
-    /// Distance along the route to the exit, in meters.
+    /// How far you still have to walk to the destination, in meters.
     var distanceMeters: Double
+    /// Set by the navigator so the green puck matches the vibration exactly. Nil = judge from the bearing.
+    var aligned: Bool? = nil
     /// Diameter of the arrow puck in points.
     var size: CGFloat = 168
 
@@ -22,7 +24,7 @@ struct ExitArrowView: View {
     @State private var displayedAngle: Double = 0
 
     private var isAligned: Bool {
-        abs(Self.normalized(relativeBearing)) <= Self.alignedTolerance
+        aligned ?? (abs(Self.normalized(relativeBearing)) <= Self.alignedTolerance)
     }
 
     var body: some View {
@@ -31,10 +33,7 @@ struct ExitArrowView: View {
             DistanceLabel(meters: distanceMeters, relativeBearing: relativeBearing)
         }
         .animation(.easeInOut(duration: 0.25), value: isAligned)
-        // One firm tap the moment you turn to face the exit, nothing while you stay aligned.
-        .sensoryFeedback(.impact(weight: .heavy), trigger: isAligned) { wasAligned, nowAligned in
-            nowAligned && !wasAligned
-        }
+        // Vibration is handled by FindMyHaptics (snap on green, taps that speed up as you get closer).
         .onAppear { displayedAngle = Self.normalized(relativeBearing) }
         .onChange(of: relativeBearing) { _, newBearing in
             let delta = Self.shortestDelta(from: displayedAngle, to: newBearing)
