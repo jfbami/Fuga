@@ -9,18 +9,13 @@ struct ContentView: View {
     @StateObject private var nav: RouteNavigator
     @State private var here: String?
     @State private var destination: HallwayGraph.Destination?
-    @State private var mapMode: MapMode = .threeD
-    private let walls: BuildingWalls
-
-    enum MapMode { case threeD, flat, hidden
-        var next: MapMode { self == .threeD ? .flat : self == .flat ? .hidden : .threeD }
-        var icon: String { self == .threeD ? "view.3d" : self == .flat ? "map.fill" : "map" }
-        var label: String { self == .threeD ? "3D map. Tap for flat map" : self == .flat ? "Flat map. Tap to hide" : "Map hidden. Tap for 3D map" }
-    }
+    @State private var showMap = true
+    @State private var manualTest = false
     @State private var showRepin = false
     @State private var showQuickLook = false
     @StateObject private var voice: VoiceGuidance
-    @StateObject private var haptics = OffCourseHapticPlayer()
+    @StateObject private var haptics: OffCourseHapticPlayer
+    @StateObject private var feedbackTest: FeedbackTest
     @State private var offCourseHaptics = OffCourseHaptics()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -31,7 +26,9 @@ struct ContentView: View {
         let navigator = RouteNavigator(graph: graph)
         _nav = StateObject(wrappedValue: navigator)
         _voice = StateObject(wrappedValue: navigator.narration)
-        walls = BuildingWalls.load(resource: "mgh4_walls") ?? .schematic(from: graph)
+        let hapticPlayer = OffCourseHapticPlayer()
+        _haptics = StateObject(wrappedValue: hapticPlayer)
+        _feedbackTest = StateObject(wrappedValue: FeedbackTest(voice: navigator.narration, haptics: hapticPlayer))
     }
 
     private var hereNode: HallwayGraph.Node? { here.flatMap { nav.graph.node($0) } }
@@ -55,12 +52,13 @@ struct ContentView: View {
         .sheet(isPresented: $showQuickLook) { QuickLookView(session: nav.session) }
         .task(id: scenePhase) { await runCues() }
         .onDisappear {
+            feedbackTest.stop()
             voice.stop()
             offCourseHaptics.reset()
             haptics.stop()
         }
         .onChange(of: showQuickLook) { _, shown in
-            if shown { voice.stop(); haptics.stop() }
+            if shown { feedbackTest.stop(); voice.stop(); haptics.stop() }
         }
     }
 
@@ -70,6 +68,7 @@ struct ContentView: View {
     private func runCues() async {
         offCourseHaptics.reset()
         guard scenePhase == .active else {
+            feedbackTest.stop()
             voice.stop()
             haptics.stop()
             return
@@ -116,11 +115,13 @@ struct ContentView: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Audio & vibration check").font(.headline)
-                    Button("Test Juno") { voice.testVoice() }
+                    Button("Test Juno") { feedbackTest.stop(); voice.testVoice() }
                     HStack {
-                        Button("Subtle vibration") { haptics.play(.subtle) }
-                        Button("Strong vibration") { haptics.play(.strong) }
+                        Button("Subtle vibration") { feedbackTest.stop(); haptics.play(.subtle) }
+                        Button("Strong vibration") { feedbackTest.stop(); haptics.play(.strong) }
                     }
+                    Button(feedbackTest.running ? "Stop test" : "Test voice & vibration") { feedbackTest.toggle() }
+                    if !feedbackTest.step.isEmpty { Text(feedbackTest.step) }
                     Text(voice.status)
                     Text(haptics.status)
                     Text("These buttons test your phone directly. Automatic route cues remain off until walking guidance is verified.")
@@ -129,7 +130,13 @@ struct ContentView: View {
                 .buttonStyle(.bordered)
                 .foregroundStyle(.white)
 
-                sectionTitle("Manual starting-point demo", subtitle: "Use Find my location above for the camera test. Walking guidance awaits verification.")
+                sectionTitle("Manual starting-point demo", subtitle: "Choose your current landmark and destination below.")
+                #if DEBUG
+                Toggle("Enable manual navigation test", isOn: $manualTest)
+                    .tint(.fugaGreen).foregroundStyle(.white)
+                Text("Unverified map — testing only. Choose a known starting point and face its door. This is not verified evacuation guidance.")
+                    .font(.footnote).foregroundStyle(.yellow)
+                #endif
                 VStack(spacing: 8) {
                     ForEach(nav.graph.landmarks, id: \.id) { node in
                         choice(node.landmark ?? node.id, selected: here == node.id) {
@@ -169,22 +176,33 @@ struct ContentView: View {
                 }
 
                 Button {
-                    if let hereNode, let destination { nav.start(at: hereNode, to: destination) }
+                    feedbackTest.stop()
+                    if let hereNode, let destination {
+                        nav.start(at: hereNode, to: destination, manualTest: manualTest)
+                    }
                 } label: {
                     Text(startLabel).font(.title3.bold()).frame(maxWidth: .infinity).padding(.vertical, 16)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.fugaGreen)
-                .disabled(!RouteNavigator.guidanceEnabled || hereNode == nil || destination == nil || !nav.trackingReady)
+                .disabled(!NavigationAccess.permitsStart(verified: RouteNavigator.guidanceEnabled, manualTest: manualTest) || hereNode == nil || destination == nil || !nav.trackingReady)
+                if let error = nav.startError { Text(error).foregroundStyle(.yellow) }
             }
             .padding(20)
         }
     }
 
     private var startLabel: String {
+        if !NavigationAccess.permitsStart(verified: RouteNavigator.guidanceEnabled, manualTest: manualTest) {
+            #if DEBUG
+            return "Enable manual navigation test above"
+            #else
+            return "Navigation awaiting map verification"
+            #endif
+        }
         if hereNode == nil { return "Pick where you are" }
         if destination == nil { return "Pick where to go" }
-        return nav.trackingReady ? "Start" : "Getting ready…"
+        return nav.trackingReady ? (manualTest ? "Start manual test" : "Start") : "Waiting for camera tracking…"
     }
 
     private func sectionTitle(_ title: String, subtitle: String?) -> some View {
@@ -237,16 +255,19 @@ struct ContentView: View {
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .accessibilityLabel(voice.isEnabled ? "Juno narration on. Tap to mute" : "Juno narration off. Tap to turn on")
-                Button { mapMode = mapMode.next } label: {
-                    Image(systemName: mapMode.icon)
+                Button { showMap.toggle() } label: {
+                    Image(systemName: showMap ? "map.fill" : "map")
                         .font(.title3)
                         .foregroundStyle(.white)
                         .padding(10)
                         .background(.ultraThinMaterial, in: Circle())
                 }
-                .accessibilityLabel(mapMode.label)
+                .accessibilityLabel(showMap ? "Hide map" : "Show map")
             }
 
+            if nav.isManualTest {
+                Text("MANUAL TEST · UNVERIFIED MAP").font(.caption.bold()).foregroundStyle(.yellow)
+            }
             Text(nav.instruction)
                 .font(.title3.weight(.semibold))
                 .foregroundStyle(.white)
@@ -273,15 +294,7 @@ struct ContentView: View {
                     .padding(.top, 6)
             }
 
-            if mapMode == .threeD {
-                Building3DView(graph: nav.graph, walls: walls, path: nav.remainingPlanPath,
-                               position: nav.planPosition, headingDegrees: nav.planHeading)
-                    .frame(height: 230)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.5), lineWidth: 1))
-                    .padding(.top, 12)
-                    .accessibilityHidden(true)
-            } else if mapMode == .flat {
+            if showMap {
                 MiniMap(graph: nav.graph, route: nav.route, position: nav.planPosition, headingDegrees: nav.planHeading)
                     .frame(width: 150, height: 190)
                     .frame(maxWidth: .infinity, alignment: .trailing)

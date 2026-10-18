@@ -7,10 +7,9 @@ import Foundation
 final class VoiceGuidance: ObservableObject {
     @Published private(set) var isEnabled = true
     @Published private(set) var status = "Juno voice on"
-    private let synthesizer = AVSpeechSynthesizer()
     private var player: AVAudioPlayer?
     private var scheduler = VoiceCueScheduler()
-    var isSpeaking: Bool { player?.isPlaying == true || synthesizer.isSpeaking }
+    var isSpeaking: Bool { player?.isPlaying == true }
     private var priorityPlayback = false
 
     /// Route events preempt directional reminders; both use the same Juno player.
@@ -39,7 +38,6 @@ final class VoiceGuidance: ObservableObject {
     /// Stops any cue that is playing and forgets the last one, without touching the audio session.
     func silence() {
         if player != nil { player?.stop(); player = nil }
-        if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         scheduler = VoiceCueScheduler()
         priorityPlayback = false
     }
@@ -58,7 +56,6 @@ final class VoiceGuidance: ObservableObject {
 
     private func speak(_ cue: VoiceCue) {
         player?.stop()
-        synthesizer.stopSpeaking(at: .immediate)
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
@@ -78,14 +75,6 @@ final class VoiceGuidance: ObservableObject {
                 return
             }
         }
-        if cue == .test {
-            status = "Juno test failed — bundled audio missing or unreadable. Rebuild the app."
-            return
-        }
-        let utterance = AVSpeechUtterance(string: cue.text)
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
-        utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        synthesizer.speak(utterance)
-        status = "Device voice — ElevenLabs clips not installed"
+        status = "Juno audio unavailable for \(cue.rawValue). Rebuild the app with its voice clips."
     }
 }

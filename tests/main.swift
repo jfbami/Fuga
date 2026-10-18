@@ -61,3 +61,12 @@ expect(haptics.update(bearing: 0, distance: 4, now: 21.5) == nil, "Ignore brief 
 expect(haptics.update(bearing: 100, distance: 4, now: 22) == nil, "Restart debounce")
 expect(haptics.update(bearing: 100, distance: 4, now: 22.75) == .strong, "Sustained deviation after noise")
 print("Two-strength off-course haptic checks passed")
+
+expect(NavigationAccess.permitsStart(verified: true, manualTest: false), "Verified navigation allowed")
+expect(!NavigationAccess.permitsStart(verified: false, manualTest: false), "Unverified navigation requires opt-in")
+#if DEBUG
+expect(NavigationAccess.permitsStart(verified: false, manualTest: true), "Manual test available in developer build")
+#else
+expect(!NavigationAccess.permitsStart(verified: false, manualTest: true), "Release build cannot bypass verification")
+#endif
+print("Navigation access checks passed")

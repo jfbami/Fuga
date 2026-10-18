@@ -31,13 +31,15 @@ struct PlanAlignment {
 @MainActor
 final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     // Route graph coordinates are not registered to the canonical scan, and no
-    // doorway/path anchors are verified. Neither manual nor automatic starts may
-    // turn on guidance until that work is reviewed.
+    // doorway/path anchors are verified. Automatic/release guidance remains blocked;
+    // a developer build can explicitly opt into a manual test.
     static let guidanceEnabled = false
     enum Phase: Equatable { case idle, navigating, arrived }
 
     // MARK: Published state
 
+    @Published private(set) var startError: String?
+    @Published private(set) var isManualTest = false
     @Published private(set) var phase: Phase = .idle
     @Published private(set) var trackingReady = false
     @Published private(set) var trackingMessage: String? = "Starting the camera…"
@@ -112,13 +114,22 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     // MARK: Navigation
 
     /// You're standing in front of `landmark`'s door, facing it. Route to `destination`.
-    func start(at landmark: HallwayGraph.Node, to destination: HallwayGraph.Destination) {
-        guard Self.guidanceEnabled else {
-            instruction = "Guidance is waiting for location and path verification."
+    func start(at landmark: HallwayGraph.Node, to destination: HallwayGraph.Destination, manualTest: Bool = false) {
+        startError = nil
+        guard NavigationAccess.permitsStart(verified: Self.guidanceEnabled, manualTest: manualTest) else {
+            startError = "Enable the manual test or wait for map verification."
+            return
+        }
+        guard trackingReady, lastFrame != nil else {
+            startError = "Wait for camera tracking, then try Start again."
             return
         }
         guard let route = graph.route(from: landmark.point, to: destination,
-                                      fromName: landmark.landmark ?? landmark.id) else { return }
+                                      fromName: landmark.landmark ?? landmark.id) else {
+            startError = "No route connects these locations. Choose another destination."
+            return
+        }
+        isManualTest = !Self.guidanceEnabled && manualTest
         if let frame = lastFrame, trackingReady {
             pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: false)
         } else {
@@ -156,7 +167,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     /// "I'm next to this landmark right now" during a walk: fixes position drift.
     /// Keeps the current direction estimate (you don't need to face the door).
     func repin(at landmark: HallwayGraph.Node) {
-        guard Self.guidanceEnabled else { return }
+        guard NavigationAccess.permitsStart(verified: Self.guidanceEnabled, manualTest: isManualTest) else { return }
         guard let frame = lastFrame, trackingReady else { return }
         pin(at: landmark, arPosition: frame.position, arHeading: frame.heading, keepDirection: true)
         if let destination, let newRoute = graph.route(from: landmark.point, to: destination) {
@@ -173,6 +184,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     }
 
     func stop() {
+        isManualTest = false
+        startError = nil
         phase = .idle
         route = nil
         tracker = nil

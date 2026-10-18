@@ -13,8 +13,10 @@ jobs:
       - uses: actions/checkout@v4
       - name: Guidance logic
         run: |
-          swiftc Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift tests/main.swift -o /tmp/fuga-tests
+          swiftc Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift Fuga/Navigation/NavigationAccess.swift tests/main.swift -o /tmp/fuga-tests
           /tmp/fuga-tests
+          swiftc -D DEBUG Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift Fuga/Navigation/NavigationAccess.swift tests/main.swift -o /tmp/fuga-debug-tests
+          /tmp/fuga-debug-tests
           python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Build native iOS app
         run: xcodebuild -project Fuga.xcodeproj -scheme Fuga -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/fuga-build CODE_SIGNING_ALLOWED=NO build

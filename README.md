@@ -13,13 +13,18 @@ Juno (`3T3dPoABJjGZZAI1eif7`) is enabled by default and now handles route events
 and direction reminders through one player. Bundled narration covers start, turns,
 upcoming turns, off-route/back-on-route, position updates, and arrival. Dynamic room
 names and exact distances remain on screen; they are not spoken by these offline clips.
-Apple speech remains an explicitly labeled fallback if a route clip cannot play.
+Apple synthesized speech has been removed entirely. A missing/unplayable clip produces a visible error; there is no alternate narrator.
 
-The integrated branch deliberately sets `RouteNavigator.guidanceEnabled = false`
-because the route graph and physical paths are not yet verified. These changes
-preserve that block. Automatic off-course cues therefore remain disabled; the test
-buttons are independent of routing and do not claim a valid walking route. Once
-verified routing is enabled, only off-course nudges run (no alignment/arrival buzzes).
+**To start navigation in an Xcode Debug build:** enable **Enable manual navigation
+test**, select the starting landmark and destination, wait for camera tracking,
+then tap **Start manual test**. The test route is labeled as an unverified map.
+The same shared Juno player handles narration and direction cues. Start also stops
+any feedback test so it cannot overlap navigation.
+
+`RouteNavigator.guidanceEnabled = false` still blocks automatic/release guidance
+until map alignment and physical paths are verified. Only the explicit Debug-build
+manual test bypasses that gate. Release builds cannot bypass it. Start reports
+missing tracking or disconnected routes instead of silently doing nothing.
 
 The GitHub iOS build workflow compiles the actual app with an iOS SDK and verifies
 all twelve MP3s are present in its bundle. Hardware feel still requires the phone test.
@@ -40,7 +45,11 @@ The app has LiDAR-built maps of Mary Gates Hall's 4th floor, routing, a camera c
 
 ## Offline ElevenLabs voice
 
-During guidance, tap the speaker button to turn on short direction cues: "Continue straight ahead", "Turn to your left", "Turn to your right" and "Turn around". They come from four bundled ElevenLabs clips, so they need no network or API key on the phone. If a clip is missing, Apple's device voice reads the same words and the screen says so. The cues wait while the navigator is speaking a turn instruction. Arrival is announced by the navigator with the room name and side, so the bundled "You've reached the exit" clip isn't used in the app.
+Juno narration starts enabled. Tap the speaker button to mute all narration.
+All route events and direction reminders share one player, so they cannot speak
+over each other. The twelve bundled clips work offline; missing clips produce a
+visible error without falling back to Apple speech. Room names and exact distances
+remain on screen. The idle screen never interrupts feedback-test playback.
 
 Generate clips before building (Python 3, no packages required):
 
@@ -69,12 +78,12 @@ In the app, `ContentView` feeds the navigator's arrow bearing and remaining rout
 Logic checks (no iOS SDK required):
 
 ```sh
-swiftc Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift tests/main.swift -o /tmp/fuga-voice-tests
+swiftc Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift Fuga/Navigation/NavigationAccess.swift tests/main.swift -o /tmp/fuga-voice-tests
 /tmp/fuga-voice-tests
 ```
 
 On an iPhone, verify each direction, arrival, mute, background/foreground, and airplane
-mode with generated clips. Also remove a clip to confirm the device-voice fallback.
+mode with generated clips. Also remove a clip to confirm a visible error and no Apple speech.
 
 ### Off-course vibration
 
@@ -106,10 +115,9 @@ The floor's map ships inside the app, so anyone can open Fuga and go. No setup, 
 
 1. Open Fuga. Under **Where are you?**, pick the room or landmark you're closest to: the Elevator, 416 iLounge, 420 Student Services, or either door of 430 Computer Classroom.
 2. Stand in front of that door, facing it, phone upright. That tells Fuga exactly where you are and which way you're facing.
-3. Under **Where to?**, pick a room and tap **Start**. It tells you which way to turn first (usually "Turn around").
+3. In an Xcode Debug build, enable **Enable manual navigation test**, pick a room under **Where to?**, and tap **Start manual test**. It tells you which way to turn first (usually "Turn around").
 4. Follow the arrow. It points along the route drawn on the map: down the hallway you're in, swinging to the next hallway just before each corner. The number under it is how far you still have to walk to the room.
 5. Look through the camera: a **solid green line on the hallway floor** runs from your feet to the room, like the route in Apple Maps, with a soft highlight sweeping along it. Walls the phone sees hide it where it turns a corner (Pro iPhones use the LiDAR 3D mesh; other iPhones use the wall planes ARKit detects).
-   The **3D map** at the top shows you as a blue arrow inside a cut-away model of the floor (low solid walls, glass above), with the route on the floor and the camera following behind you. Tap the map button to switch between 3D, flat and hidden. For real walls, generate `Fuga/Maps/mgh4_walls.json` locally with `tools/mapping/build_walls.py` (it comes from the NetID-only plans, so it isn't in this repo); without it the 3D view shows simple hallway walls.
 6. Vibration works like Find My: when you turn to face the way the arrow points, it turns green with a firm **snap**, then **taps** while you keep facing that way, faster and stronger as you get closer. Face the wrong way and it goes quiet. At a corner the arrow swings, the taps stop, and they come back when you've turned. Turns are also spoken 4 m ahead and at the corner, and on arrival a short burst plays, it says which side the door is on, and the arrow points at the door.
 7. Passing a room on the list? Tap **I'm at a landmark** and pick it to fix any drift. It re-plans the route from there.
 
@@ -120,9 +128,9 @@ How it works: the landmark you pick pins your spot and direction on the UW floor
 | Path | What it is |
 | --- | --- |
 | `Fuga/Guidance/ExitArrowView.swift` | Find My–style arrow: bearing relative to the phone + distance. Turns green with a haptic tap when you face the right way |
-| `Fuga/Guidance/FloorPathNode.swift` | The solid green route line on the floor (camera view and 3D map) |
-| `Fuga/Navigation/Building3DView.swift` | 3D cut-away map of the floor with you and the route |
-| `Fuga/Guidance/VoiceGuidance.swift`, `VoiceCue.swift` | Optional ElevenLabs direction cues (bundled clips, device-voice fallback) |
+| `Fuga/Guidance/FloorPathNode.swift` | The solid green route line on the floor in the camera view |
+| `Fuga/Guidance/VoiceGuidance.swift`, `VoiceCue.swift` | Shared Juno narration (bundled clips, explicit missing-audio errors) |
+| `Fuga/Guidance/FeedbackTest.swift` | **Test voice & vibration** button: plays every spoken cue and vibration pattern without starting navigation |
 | `Fuga/Guidance/OffCourseHaptics.swift` | Off-course nudges: light pulses at 45°+ off the route, heavy at 100°+ |
 | `Fuga/Guidance/FindMyHaptics.swift` | Find My–style vibration: snap when aligned, taps that speed up as you get closer, arrival burst (Core Haptics) |
 | `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale |
