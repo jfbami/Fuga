@@ -1,7 +1,7 @@
 name: iOS build and voice assets
 on:
   push:
-    branches: [codex/juno-native-fix, nav/route-guidance]
+    branches: [codex/juno-native-fix, codex/navigation-alignment-fix, nav/route-guidance]
   pull_request:
     paths: ['Fuga/**', 'Fuga.xcodeproj/**', 'Config/**', 'tests/**', '.github/workflows/ios-build.yml']
 permissions:
@@ -18,6 +18,10 @@ jobs:
           swiftc -D DEBUG Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift Fuga/Navigation/NavigationAccess.swift tests/main.swift -o /tmp/fuga-debug-tests
           /tmp/fuga-debug-tests
           python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Alignment geometry regressions
+        run: |
+          swiftc Fuga/Navigation/RouteTracker.swift Fuga/Navigation/Route.swift Fuga/Navigation/HallwayGraph.swift Fuga/Navigation/PlanAlignment.swift tests/alignment/main.swift -o /tmp/fuga-alignment-tests
+          /tmp/fuga-alignment-tests
       - name: Build native iOS app
         run: xcodebuild -project Fuga.xcodeproj -scheme Fuga -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/fuga-build CODE_SIGNING_ALLOWED=NO build
       - name: Check bundled Juno audio

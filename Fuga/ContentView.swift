@@ -53,9 +53,9 @@ struct ContentView: View {
         }
         #if DEBUG
         .sheet(isPresented: $showManualTest) {
-            ManualNavigationTestView(nav: nav) { landmark, destination in
+            ManualNavigationTestView(nav: nav) { landmark, destination, doorDistance in
                 feedbackTest.stop()
-                nav.start(at: landmark, to: destination, manualTest: true)
+                nav.start(at: landmark, to: destination, manualTest: true, doorDistance: doorDistance)
             }
         }
         #endif
@@ -77,17 +77,19 @@ struct ContentView: View {
     private func runCues() async {
         offCourseHaptics.reset()
         guard scenePhase == .active else {
+            if nav.phase != .idle { nav.suspendGuidance("App paused. Recalibrate at a known doorway.") }
             feedbackTest.stop()
             voice.stop()
             haptics.stop()
             return
         }
         while !Task.isCancelled {
+            nav.checkTrackingFreshness()
             if feedbackTest.running {
                 // The idle-screen feedback test owns the shared voice player.
                 // Silencing it every 250 ms would cut off its preview clips.
                 offCourseHaptics.reset()
-            } else if nav.phase == .navigating, nav.trackingReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
+            } else if nav.phase == .navigating, nav.trackingReady, nav.guidanceReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
                 // Don't talk over a spoken turn instruction.
                 // Turn announcements and direction reminders share one Juno player;
                 // update() waits while an announcement is playing.
@@ -176,7 +178,7 @@ struct ContentView: View {
                 .padding(.top, 2)
 
             if nav.isOffRoute {
-                Label("Off route. Turn until it vibrates.", systemImage: "exclamationmark.triangle.fill")
+                Label("Off route. Stop and check your position.", systemImage: "exclamationmark.triangle.fill")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.yellow)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -199,9 +201,25 @@ struct ContentView: View {
 
             Spacer()
 
-            ExitArrowView(relativeBearing: nav.relativeBearing, distanceMeters: nav.distanceRemaining,
-                          aligned: nav.phase == .arrived ? nil : nav.isAligned)
-                .padding(.bottom, 16)
+            if let message = nav.alignmentMessage {
+                Text(message).foregroundStyle(.yellow).font(.subheadline)
+            }
+            if nav.guidanceReady {
+                ExitArrowView(relativeBearing: nav.relativeBearing, distanceMeters: nav.distanceRemaining,
+                              aligned: nav.phase == .arrived ? nil : nav.isAligned)
+                    .padding(.bottom, 16)
+            } else {
+                Label("Guidance paused — recalibration needed", systemImage: "location.slash")
+                    .foregroundStyle(.yellow).padding(.bottom, 16)
+            }
+            #if DEBUG
+            Button("Recalibrate at a doorway") {
+                feedbackTest.stop()
+                nav.suspendGuidance("Recalibrating at a doorway.")
+                showManualTest = true
+            }
+            .buttonStyle(.bordered)
+            #endif
 
             HStack {
                 Button("End") { nav.stop() }

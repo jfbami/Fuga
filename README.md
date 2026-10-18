@@ -1,3 +1,30 @@
+## Alignment fixes and physical test
+
+The manual test now requires the **measured phone-to-door distance** (0.2–3 m).
+Stand directly in front of the selected doorway and face it with the phone upright.
+Calibration uses the mapped door plus that measured offset, rather than placing you
+at the corridor centerline. The flat-phone heading-axis substitution and automatic
+route-based pose rotation/translation have been removed.
+
+The AR path uses only an observed nearby horizontal floor surface. It stays hidden
+until one is detected; there is no assumed 1.35 m camera height. Tracking loss,
+interruption, missing camera updates, and a position more than 2 m off the route
+pause guidance and require **Recalibrate at a doorway**. Returning to a camera screen
+preserves the AR world frame. A nearly vertical camera pauses heading cues instead
+of switching axes. Route progress cannot jump to a nonadjacent parallel corridor,
+and arrival also requires proximity to the route endpoint.
+
+These are code-level fixes, not a verified registration of the map to the building.
+The stored doorway coordinates and hallway graph are still draft plan geometry,
+separate from the scan frame. No scale, coordinates, or scan transforms were invented.
+Automatic navigation remains disabled pending reviewed registration and physical tests.
+
+On the phone, test a measured doorway start, a straight hallway and corner, a lateral
+step (the map should stay fixed), phone tilt, background/resume, and tracking loss.
+Record whether the initial door and next corner align before walking further. If a
+correctly calibrated start still gives a wrong corner position, the graph geometry
+needs measured control points/scan registration, not automatic snapping to the route.
+
 ## Native audio and vibration test (Juno)
 
 Build the integrated `codex/juno-native-fix` branch in Xcode, install on a physical
@@ -15,7 +42,7 @@ upcoming turns, off-route/back-on-route, position updates, and arrival. Dynamic 
 names and exact distances remain on screen; they are not spoken by these offline clips.
 Apple synthesized speech has been removed entirely. A missing/unplayable clip produces a visible error; there is no alternate narrator.
 
-**To start navigation in an Xcode Debug build:** open **Manual navigation test** under **Developer navigation test** on the automatic-location screen, select the starting landmark and destination, wait for camera tracking,
+**To start navigation in an Xcode Debug build:** open **Manual navigation test** under **Developer navigation test** on the automatic-location screen, select the starting landmark and destination, enter the measured phone-to-door distance, wait for camera tracking,
 then tap **Start manual test**. The test route is labeled as an unverified map.
 The same shared Juno player handles narration and direction cues. Start also stops
 any feedback test so it cannot overlap navigation.

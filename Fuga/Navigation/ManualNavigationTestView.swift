@@ -4,10 +4,17 @@ import SwiftUI
 /// Explicit manual test path; never supplies a claimed automatic localization result.
 struct ManualNavigationTestView: View {
     @ObservedObject var nav: RouteNavigator
-    let onStart: (HallwayGraph.Node, HallwayGraph.Destination) -> Void
+    let onStart: (HallwayGraph.Node, HallwayGraph.Destination, Double) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var landmarkID = ""
     @State private var destinationID = ""
+    @State private var doorDistanceText = ""
+
+    private var doorDistance: Double? {
+        guard let value = Double(doorDistanceText.replacingOccurrences(of: ",", with: ".")),
+              value.isFinite, (0.2...3).contains(value) else { return nil }
+        return value
+    }
 
     private var landmark: HallwayGraph.Node? { nav.graph.node(landmarkID) }
     private var destination: HallwayGraph.Destination? {
@@ -20,7 +27,7 @@ struct ManualNavigationTestView: View {
                 Section {
                     Text("Unverified map — testing only. This does not verify a safe evacuation route.")
                         .foregroundStyle(.orange)
-                    Text("Stand at a known landmark, face its door, and select your destination.")
+                    Text("Stand directly in front of the chosen door, facing it with the phone upright. Enter the measured distance from the phone to the door; do not stand at an arbitrary point in the hallway.")
                 }
                 Section("Starting point") {
                     Picker("Landmark", selection: $landmarkID) {
@@ -29,6 +36,12 @@ struct ManualNavigationTestView: View {
                             Text(node.landmark ?? node.id).tag(node.id)
                         }
                     }
+                }
+                Section("Doorway calibration") {
+                    TextField("Phone-to-door distance in meters (0.2–3)", text: $doorDistanceText)
+                        .keyboardType(.decimalPad)
+                    Text("Measure this distance. The corridor centerline is not your starting position.")
+                        .font(.footnote)
                 }
                 Section("Destination") {
                     Picker("Room", selection: $destinationID) {
@@ -41,11 +54,11 @@ struct ManualNavigationTestView: View {
                 Section {
                     if let message = nav.trackingMessage { Text(message) }
                     Button(nav.trackingReady ? "Start manual test" : "Waiting for camera tracking…") {
-                        guard let landmark, let destination else { return }
-                        onStart(landmark, destination)
+                        guard let landmark, let destination, let doorDistance else { return }
+                        onStart(landmark, destination, doorDistance)
                         if nav.phase == .navigating { dismiss() }
                     }
-                    .disabled(landmark == nil || destination == nil || !nav.trackingReady)
+                    .disabled(landmark == nil || destination == nil || doorDistance == nil || !nav.trackingReady)
                     if let error = nav.startError { Text(error).foregroundStyle(.orange) }
                 }
             }

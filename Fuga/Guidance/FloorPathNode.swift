@@ -86,21 +86,36 @@ final class FloorPathNode: SCNNode {
         isHidden = false
     }
 
-    /// The real floor in the camera view: the lowest horizontal plane ARKit has found well below
-    /// the phone, or ~1.35 m below the phone until it finds one. Smoothed so the line doesn't jump.
-    func floorHeight(_ frame: ARFrame) -> Float {
-        let cameraY = frame.camera.transform.columns.3.y
-        let floors = frame.anchors.compactMap { $0 as? ARPlaneAnchor }
-            .filter { $0.alignment == .horizontal }
-            .map { $0.transform.columns.3.y }
-            .filter { $0 < cameraY - 0.7 && $0 > cameraY - 2.2 }
-        let target = floors.min() ?? (cameraY - 1.35)
-        if let s = smoothedFloorY, abs(s - target) < 0.5 {
-            smoothedFloorY = s + (target - s) * 0.2
+    func resetFloor() {
+        hide()
+        smoothedFloorY = nil
+    }
+
+    /// Use an observed local horizontal surface; never invent a floor relative to
+    /// the phone's changing height. Prefer ARKit's floor classification when available.
+    func floorHeight(_ frame: ARFrame) -> Float? {
+        let camera = frame.camera.transform.columns.3
+        let candidates = frame.anchors.compactMap { $0 as? ARPlaneAnchor }.filter { plane in
+            guard plane.alignment == .horizontal else { return false }
+            let local = simd_inverse(plane.transform) * camera
+            let nearby = abs(local.x - plane.center.x) <= plane.extent.x / 2 + 0.5
+                && abs(local.z - plane.center.z) <= plane.extent.z / 2 + 0.5
+            let height = plane.transform.columns.3.y + plane.center.y
+            let largeEnough = plane.extent.x * plane.extent.z >= 2
+            return nearby && largeEnough && height < camera.y - 0.7 && height > camera.y - 2.2
+                && (plane.classification == .floor || plane.classification == .none)
+        }
+        let floors = candidates.filter { $0.classification == .floor }
+        guard let plane = (floors.isEmpty ? candidates : floors).max(by: {
+            $0.extent.x * $0.extent.z < $1.extent.x * $1.extent.z
+        }) else { return nil }
+        let target = plane.transform.columns.3.y + plane.center.y
+        if let previous = smoothedFloorY, abs(previous - target) < 0.3 {
+            smoothedFloorY = previous + (target - previous) * 0.2
         } else {
             smoothedFloorY = target
         }
-        return smoothedFloorY!
+        return smoothedFloorY
     }
 
     /// u = meters along the route, v = 0…1 across the band.
