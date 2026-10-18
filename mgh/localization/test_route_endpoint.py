@@ -43,7 +43,7 @@ class RouteEndpoint(unittest.TestCase):
         self.assertTrue(r['ok']); self.assertFalse(r['verified']); self.assertFalse(r['guidance_allowed'])
         self.assertEqual(r['path_scan_xz'][0], [0.0, 0.3])
         self.assertEqual(r['path_scan_xz'][-1], [10.0, 0.0])
-        self.assertAlmostEqual(r['meters'], 10.3, places=2)
+        self.assertAlmostEqual(r['meters'], math.hypot(1, 0.3) + 9, places=2)   # joins ahead at node 1
         self.assertAlmostEqual(r['initial_turn_degrees'], 0, delta=10)
 
     def test_refuses_other_map_floor_room_or_missing_graph(self):
@@ -101,6 +101,7 @@ class FirstCaptureReplay(unittest.TestCase):
         bearing = (heading - target + 180) % 360 - 180         # clockwise-positive
         self.assertLess(bearing, 0)                             # 440 is to the left in the photo
         self.assertGreater(bearing, -60)
+        self.assertLess(abs(bearing + r['initial_turn_degrees']), 10)   # arrow and server turn agree
         self.__class__.result = dict(meters=r['meters'], arrow_bearing_deg=round(bearing, 1),
                                      server_initial_turn_deg=r['initial_turn_degrees'])
         print('\nreplay:', self.result)

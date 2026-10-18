@@ -17,6 +17,7 @@ NODE_SPACING_M = 0.75     # resample walked path every 0.75 m of horizontal trav
 REVISIT_JOIN_M = 0.8      # join non-consecutive nodes the walk passed within 0.8 m of
 TRACKING_JUMP_M = 0.5     # a single 60 Hz pose step longer than this breaks the path
 MAX_SNAP_M = 3.0          # a camera farther than this from the walked path is off-map
+JOIN_RADIUS_M = 2.0       # the camera may join the walked path at any node this close
 SMOOTH_ROWS = 61          # ~1 s centred moving average removes hand/step sway (60 Hz poses)
 
 
@@ -127,6 +128,20 @@ def shortest_path(graph, start, goal):
     return path[::-1], dist[goal]
 
 
+def distances_to(graph, goal):
+    """Walking distance from every node to `goal`, and each node's next step toward it."""
+    adj, dist, nxt, heap = _adjacency(graph), {goal: 0.0}, {}, [(0.0, goal)]
+    while heap:
+        d, u = heapq.heappop(heap)
+        if d > dist.get(u, math.inf):
+            continue
+        for v, w in adj[u]:
+            if d + w < dist.get(v, math.inf):
+                dist[v], nxt[v] = d + w, u
+                heapq.heappush(heap, (d + w, v))
+    return dist, nxt
+
+
 def plan(graph, camera_xz, camera_forward_xz, room_key):
     """Route from a scan-frame camera position to a room's sign viewpoint.
 
@@ -138,12 +153,19 @@ def plan(graph, camera_xz, camera_forward_xz, room_key):
         return dict(ok=False, reason=f'no draft target for {room_key}')
     xz = np.array([[n['x'], n['z']] for n in graph['nodes']])
     d = np.linalg.norm(xz - np.asarray(camera_xz), axis=1)
-    start = int(np.argmin(d))
-    if d[start] > MAX_SNAP_M:
-        return dict(ok=False, reason=f'camera is {d[start]:.1f} m from the walked path (limit {MAX_SNAP_M} m)')
-    path, meters = shortest_path(graph, start, target['node'])
-    if path is None:
+    nearest = int(np.argmin(d))
+    if d[nearest] > MAX_SNAP_M:
+        return dict(ok=False, reason=f'camera is {d[nearest]:.1f} m from the walked path (limit {MAX_SNAP_M} m)')
+    to_goal, nxt = distances_to(graph, target['node'])
+    # Join the walked path where the WHOLE trip is shortest, not at the nearest node: the
+    # scan walk wiggles, and the nearest node can sit behind you, adding a backtrack.
+    near = [int(i) for i in np.flatnonzero(d <= max(JOIN_RADIUS_M, d[nearest])) if int(i) in to_goal]
+    if not near:
         return dict(ok=False, reason='target not connected to the walked path')
+    start = min(near, key=lambda i: d[i] + to_goal[i])
+    path, meters = [start], to_goal[start]
+    while path[-1] != target['node']:
+        path.append(nxt[path[-1]])
     # aim at the first path point at least 2 m ahead so a jittery first node doesn't set the turn
     aim = next((xz[p] for p in path if np.linalg.norm(xz[p] - camera_xz) >= 2.0), xz[path[-1]])
     turn = None

@@ -52,7 +52,16 @@ class Synthetic(unittest.TestCase):
 
     def test_path_length(self):
         r = scan_route.plan(line_graph(), (0, 0.5), (1, 0), 'R')
-        self.assertTrue(r['ok']); self.assertAlmostEqual(r['meters'], 9.5, places=2)
+        # joins at node 1 (1.118 m away) rather than backtracking via the nearest node 0
+        self.assertTrue(r['ok']); self.assertEqual(r['start_node'], 1)
+        self.assertAlmostEqual(r['meters'], math.hypot(1, 0.5) + 8, places=2)
+
+    def test_join_avoids_backtrack(self):
+        g = line_graph()
+        r = scan_route.plan(g, (3.4, 0.2), (1, 0), 'R')     # nearest is node 3, behind the shortest join
+        self.assertGreater(r['start_node'], 3)                # joins ahead, not the nearest node behind
+        far = scan_route.plan(g, (0, 2.6), (1, 0), 'R')      # only node 0 within reach: still allowed up to 3 m
+        self.assertTrue(far['ok']); self.assertEqual(far['start_node'], 0)
 
 
 @unittest.skipUnless(GRAPH.exists(), 'private graph not built')
