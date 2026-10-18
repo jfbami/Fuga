@@ -3,7 +3,8 @@ import SwiftUI
 /// Screens over the live camera:
 /// 1. Start: "Where are you?" (pick the room or landmark you're next to), "Where to?", Start.
 /// 2. Guidance: Find My–style arrow, distance, next instruction, spoken turns and vibration.
-///    "I'm at a landmark" re-pins your position if it drifts.
+///    "I'm at a landmark" re-pins your position if it drifts. Optional ElevenLabs direction
+///    cues and off-course nudges (pulses when you face well away from the route).
 struct ContentView: View {
     @StateObject private var nav: RouteNavigator
     @State private var here: String?
@@ -18,6 +19,11 @@ struct ContentView: View {
     }
     @State private var showRepin = false
     @State private var showQuickLook = false
+    @StateObject private var voice = VoiceGuidance()
+    @State private var offCourseHaptics = OffCourseHaptics()
+    @State private var subtleHapticPulse = 0
+    @State private var strongHapticPulse = 0
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         guard let graph = HallwayGraph.load(resource: "mgh4_graph") else {
@@ -46,6 +52,51 @@ struct ContentView: View {
         .onAppear { nav.runCamera() }
         .onDisappear { nav.pauseCamera() }
         .sheet(isPresented: $showQuickLook) { QuickLookView(session: nav.session) }
+        // Off-course nudges: light pulses at 45°+ away from the route, heavy at 100°+.
+        .sensoryFeedback(.impact(weight: .light, intensity: 0.4), trigger: subtleHapticPulse) { _, _ in
+            scenePhase == .active
+        }
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1), trigger: strongHapticPulse) { _, _ in
+            scenePhase == .active
+        }
+        .task(id: scenePhase) { await runCues() }
+        .onDisappear {
+            voice.stop()
+            offCourseHaptics.reset()
+        }
+    }
+
+    /// Samples the navigator 4 times a second for the ElevenLabs direction cues and the
+    /// off-course nudges. Only while walking a route: arrival is announced by the navigator
+    /// (by room name), so these never get an arrival distance.
+    private func runCues() async {
+        offCourseHaptics.reset()
+        guard scenePhase == .active else {
+            voice.stop()
+            return
+        }
+        while !Task.isCancelled {
+            if nav.phase == .navigating, nav.distanceRemaining >= 1.5 {
+                // Don't talk over a spoken turn instruction.
+                if !nav.isSpeaking {
+                    voice.update(bearing: nav.relativeBearing, distance: nav.distanceRemaining)
+                }
+                if let strength = offCourseHaptics.update(bearing: nav.relativeBearing,
+                                                          distance: nav.distanceRemaining,
+                                                          now: ProcessInfo.processInfo.systemUptime) {
+                    switch strength {
+                    case .subtle: subtleHapticPulse += 1
+                    case .strong: strongHapticPulse += 1
+                    }
+                }
+            } else {
+                voice.silence()
+                offCourseHaptics.reset()
+            }
+            do { try await Task.sleep(for: .milliseconds(250)) } catch { break }
+        }
+        voice.stop()
+        offCourseHaptics.reset()
     }
 
     // MARK: Start
@@ -165,6 +216,14 @@ struct ContentView: View {
                         .minimumScaleFactor(0.7)
                 }
                 Spacer()
+                Button { voice.setEnabled(!voice.isEnabled) } label: {
+                    Image(systemName: voice.isEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                        .font(.title3)
+                        .foregroundStyle(.white)
+                        .padding(10)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+                .accessibilityLabel(voice.isEnabled ? "Direction cues on. Tap to mute" : "Direction cues off. Tap to turn on")
                 Button { mapMode = mapMode.next } label: {
                     Image(systemName: mapMode.icon)
                         .font(.title3)
@@ -180,6 +239,11 @@ struct ContentView: View {
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.top, 10)
+            Text("Direction cues: \(voice.status)")
+                .font(.caption)
+                .foregroundStyle(.white.opacity(0.6))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 2)
 
             if nav.isOffRoute {
                 Label("Off route. Turn until it vibrates.", systemImage: "exclamationmark.triangle.fill")

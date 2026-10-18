@@ -54,6 +54,9 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var remainingPlanPath: [PathPoint] = []
 
     let session = ARSession()
+
+    /// True while a turn instruction or arrival is being spoken (other voice cues wait).
+    var isSpeaking: Bool { speech.isSpeaking }
     /// The pulsing green line on the floor (added to the camera view's 3D scene).
     let floorPath = FloorPathNode()
     let graph: HallwayGraph
