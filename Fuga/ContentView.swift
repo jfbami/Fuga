@@ -9,17 +9,11 @@ struct ContentView: View {
     @StateObject private var nav: RouteNavigator
     @State private var here: String?
     @State private var destination: HallwayGraph.Destination?
-    @State private var mapMode: MapMode = .threeD
-    private let walls: BuildingWalls
-
-    enum MapMode { case threeD, flat, hidden
-        var next: MapMode { self == .threeD ? .flat : self == .flat ? .hidden : .threeD }
-        var icon: String { self == .threeD ? "view.3d" : self == .flat ? "map.fill" : "map" }
-        var label: String { self == .threeD ? "3D map. Tap for flat map" : self == .flat ? "Flat map. Tap to hide" : "Map hidden. Tap for 3D map" }
-    }
+    @State private var showMap = true
     @State private var showRepin = false
     @State private var showQuickLook = false
-    @StateObject private var voice = VoiceGuidance()
+    @StateObject private var voice: VoiceGuidance
+    @StateObject private var feedbackTest: FeedbackTest
     @State private var offCourseHaptics = OffCourseHaptics()
     @State private var subtleHapticPulse = 0
     @State private var strongHapticPulse = 0
@@ -30,7 +24,9 @@ struct ContentView: View {
             fatalError("mgh4_graph.json is missing from the app bundle (Fuga/Maps).")
         }
         _nav = StateObject(wrappedValue: RouteNavigator(graph: graph))
-        walls = BuildingWalls.load(resource: "mgh4_walls") ?? .schematic(from: graph)
+        let voice = VoiceGuidance()
+        _voice = StateObject(wrappedValue: voice)
+        _feedbackTest = StateObject(wrappedValue: FeedbackTest(voice: voice))
     }
 
     private var hereNode: HallwayGraph.Node? { here.flatMap { nav.graph.node($0) } }
@@ -115,6 +111,19 @@ struct ContentView: View {
                 .buttonStyle(.borderedProminent).tint(.fugaGreen)
                 Text("Camera recognition test. Walking guidance is awaiting location and path verification.")
                     .font(.footnote).foregroundStyle(.white.opacity(0.8))
+
+                Button { feedbackTest.toggle() } label: {
+                    Label(feedbackTest.running ? "Stop test" : "Test voice & vibration",
+                          systemImage: feedbackTest.running ? "stop.fill" : "waveform")
+                        .font(.headline).frame(maxWidth: .infinity).padding(10)
+                }
+                .buttonStyle(.bordered).tint(.white)
+                .accessibilityHint("Plays the spoken turns, direction cues and every vibration pattern")
+                if feedbackTest.running {
+                    Text(feedbackTest.step)
+                        .font(.footnote).foregroundStyle(.white.opacity(0.85))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 sectionTitle("Manual starting-point demo", subtitle: "Use Find my location above for the camera test. Walking guidance awaits verification.")
                 VStack(spacing: 8) {
@@ -224,14 +233,14 @@ struct ContentView: View {
                         .background(.ultraThinMaterial, in: Circle())
                 }
                 .accessibilityLabel(voice.isEnabled ? "Direction cues on. Tap to mute" : "Direction cues off. Tap to turn on")
-                Button { mapMode = mapMode.next } label: {
-                    Image(systemName: mapMode.icon)
+                Button { showMap.toggle() } label: {
+                    Image(systemName: showMap ? "map.fill" : "map")
                         .font(.title3)
                         .foregroundStyle(.white)
                         .padding(10)
                         .background(.ultraThinMaterial, in: Circle())
                 }
-                .accessibilityLabel(mapMode.label)
+                .accessibilityLabel(showMap ? "Hide map" : "Show map")
             }
 
             Text(nav.instruction)
@@ -260,15 +269,7 @@ struct ContentView: View {
                     .padding(.top, 6)
             }
 
-            if mapMode == .threeD {
-                Building3DView(graph: nav.graph, walls: walls, path: nav.remainingPlanPath,
-                               position: nav.planPosition, headingDegrees: nav.planHeading)
-                    .frame(height: 230)
-                    .clipShape(RoundedRectangle(cornerRadius: 18))
-                    .overlay(RoundedRectangle(cornerRadius: 18).stroke(.white.opacity(0.5), lineWidth: 1))
-                    .padding(.top, 12)
-                    .accessibilityHidden(true)
-            } else if mapMode == .flat {
+            if showMap {
                 MiniMap(graph: nav.graph, route: nav.route, position: nav.planPosition, headingDegrees: nav.planHeading)
                     .frame(width: 150, height: 190)
                     .frame(maxWidth: .infinity, alignment: .trailing)

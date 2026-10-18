@@ -83,7 +83,6 @@ The floor's map ships inside the app, so anyone can open Fuga and go. No setup, 
 3. Under **Where to?**, pick a room and tap **Start**. It tells you which way to turn first (usually "Turn around").
 4. Follow the arrow. It points along the route drawn on the map: down the hallway you're in, swinging to the next hallway just before each corner. The number under it is how far you still have to walk to the room.
 5. Look through the camera: a **solid green line on the hallway floor** runs from your feet to the room, like the route in Apple Maps, with a soft highlight sweeping along it. Walls the phone sees hide it where it turns a corner (Pro iPhones use the LiDAR 3D mesh; other iPhones use the wall planes ARKit detects).
-   The **3D map** at the top shows you as a blue arrow inside a cut-away model of the floor (low solid walls, glass above), with the route on the floor and the camera following behind you. Tap the map button to switch between 3D, flat and hidden. For real walls, generate `Fuga/Maps/mgh4_walls.json` locally with `tools/mapping/build_walls.py` (it comes from the NetID-only plans, so it isn't in this repo); without it the 3D view shows simple hallway walls.
 6. Vibration works like Find My: when you turn to face the way the arrow points, it turns green with a firm **snap**, then **taps** while you keep facing that way, faster and stronger as you get closer. Face the wrong way and it goes quiet. At a corner the arrow swings, the taps stop, and they come back when you've turned. Turns are also spoken 4 m ahead and at the corner, and on arrival a short burst plays, it says which side the door is on, and the arrow points at the door.
 7. Passing a room on the list? Tap **I'm at a landmark** and pick it to fix any drift. It re-plans the route from there.
 
@@ -94,9 +93,9 @@ How it works: the landmark you pick pins your spot and direction on the UW floor
 | Path | What it is |
 | --- | --- |
 | `Fuga/Guidance/ExitArrowView.swift` | Find My–style arrow: bearing relative to the phone + distance. Turns green with a haptic tap when you face the right way |
-| `Fuga/Guidance/FloorPathNode.swift` | The solid green route line on the floor (camera view and 3D map) |
-| `Fuga/Navigation/Building3DView.swift` | 3D cut-away map of the floor with you and the route |
+| `Fuga/Guidance/FloorPathNode.swift` | The solid green route line on the floor in the camera view |
 | `Fuga/Guidance/VoiceGuidance.swift`, `VoiceCue.swift` | Optional ElevenLabs direction cues (bundled clips, device-voice fallback) |
+| `Fuga/Guidance/FeedbackTest.swift` | **Test voice & vibration** button: plays every spoken cue and vibration pattern without starting navigation |
 | `Fuga/Guidance/OffCourseHaptics.swift` | Off-course nudges: light pulses at 45°+ off the route, heavy at 100°+ |
 | `Fuga/Guidance/FindMyHaptics.swift` | Find My–style vibration: snap when aligned, taps that speed up as you get closer, arrival burst (Core Haptics) |
 | `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale |

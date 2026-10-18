@@ -39,6 +39,9 @@ final class VoiceGuidance: ObservableObject {
         speak(next)
     }
 
+    /// Plays one cue right away, even when cues are turned off (used by the feedback test).
+    func preview(_ cue: VoiceCue) { speak(cue) }
+
     private func speak(_ cue: VoiceCue) {
         player?.stop()
         synthesizer.stopSpeaking(at: .immediate)
