@@ -21,8 +21,8 @@ def main():
     # Use the Swift vocabulary as the source of truth for fallback and generated audio.
     source = (ROOT / "Fuga/Guidance/VoiceCue.swift").read_text()
     cues = dict(re.findall(r'case \.(\w+): return "([^"\n]+)"', source))
-    if len(cues) != 5:
-        parser.error("Expected five voice cues in VoiceCue.swift; check the vocabulary parser.")
+    if len(cues) != 12:
+        parser.error("Expected twelve voice cues in VoiceCue.swift; check the vocabulary parser.")
     if args.dry_run:
         print(json.dumps(cues, indent=2))
         return
