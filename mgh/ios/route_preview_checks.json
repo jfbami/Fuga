@@ -1,0 +1,42 @@
+{
+  "date": "2026-10-18",
+  "decision": "D033",
+  "commit": "0cf6ec213786362e9ffbb9dde951d604d6eefecc",
+  "pr": "https://github.com/jfbami/Fuga/pull/2",
+  "server": {
+    "endpoint": "POST /route",
+    "requires": "--route-graph (private draft graph)",
+    "refuses": [
+      "other map hash/frame",
+      "floors other than 4",
+      "420 / unknown rooms",
+      ">3 m off walked path",
+      "non-finite input"
+    ]
+  },
+  "app": {
+    "trigger": "possible location + destination room + server",
+    "display": "existing FloorPathNode line + ExitArrowView, orange DRAFT/UNVERIFIED/NOT GUIDANCE label",
+    "voice": false,
+    "vibration": false,
+    "starts_route_navigator": false,
+    "update_hz": 10,
+    "off_route_message_m": 3
+  },
+  "tests": {
+    "server_python": "5 passed (incl. offline replay of capture 4C1B520E)",
+    "existing_server": "3 + 12 passed",
+    "swift_route_math": "tests/route_preview/main.swift added to CI; not run on Windows",
+    "swift_grammar": "25 files parsed, 0 errors",
+    "live_http": "localhost /route 440 ok 12.07 m, 420 refused, 416 ok 19.58 m; server stopped"
+  },
+  "replay": {
+    "route_start_vs_phone_m": "<0.05",
+    "meters_to_440_sign_viewpoint": 12.07,
+    "arrow_bearing_deg": -1.5,
+    "server_initial_turn_deg": 16.1
+  },
+  "physical_iphone_preview_test": false,
+  "guidance_enabled": false,
+  "route_verified": false
+}
