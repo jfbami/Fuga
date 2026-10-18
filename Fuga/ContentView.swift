@@ -113,12 +113,19 @@ struct ContentView: View {
 
     // MARK: Automatic starting-location entry
 
+    /// DEMO BRANCH: clean home + full-screen Find location. The original screen, with every
+    /// tool (server, export, voice & vibration test, manual test), opens from the gear.
     private var startScreen: some View {
-        QuickLookView(session: nav.session, showsCloseButton: false,
-                      onCameraWork: { feedbackTest.stop() },
-                      feedbackAction: { feedbackTest.toggle() },
-                      feedbackRunning: feedbackTest.running, feedbackStep: feedbackTest.step,
-                      manualTestAction: manualTestAction)
+        DemoHomeView(session: nav.session, onCameraWork: { feedbackTest.stop() }) { close in
+            QuickLookView(session: nav.session, showsCloseButton: true,
+                          onCameraWork: { feedbackTest.stop() },
+                          feedbackAction: { feedbackTest.toggle() },
+                          feedbackRunning: feedbackTest.running, feedbackStep: feedbackTest.step,
+                          manualTestAction: manualTestAction.map { action -> () -> Void in
+                              // Close the tools sheet first: two sheets can't be shown at once.
+                              { close(); DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { action() } }
+                          })
+        }
     }
 
     private var manualTestAction: (() -> Void)? {

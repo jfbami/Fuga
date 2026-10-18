@@ -1,7 +1,7 @@
 name: iOS build and voice assets
 on:
   push:
-    branches: [codex/juno-native-fix, codex/navigation-alignment-fix, nav/route-guidance, mgh-localization]
+    branches: [codex/juno-native-fix, codex/navigation-alignment-fix, nav/route-guidance, mgh-localization, demo-purpose-only]
   pull_request:
     paths: ['Fuga/**', 'Fuga.xcodeproj/**', 'Config/**', 'tests/**', '.github/workflows/ios-build.yml']
 permissions:
