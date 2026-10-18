@@ -47,7 +47,7 @@ enum QuickLookCapture {
             "intrinsics": ["width": height, "height": width,
                 "fx": Double(k[1][1]), "fy": Double(k[0][0]),
                 "cx": Double(height - 1) - Double(k[2][1]), "cy": Double(k[2][0]),
-                "distortion": []] as [String: Any],
+                "distortion": [Double]()] as [String: Any],
             "capture_metadata": [
                 "calibration_source": "Same ARFrame ARCamera.intrinsics; device-provided, not surveyed validation",
                 "pixel_transform": "native_sensor_to_portrait_clockwise_90_no_crop_no_resize",
