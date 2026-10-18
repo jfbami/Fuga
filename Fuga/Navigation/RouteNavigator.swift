@@ -1,4 +1,5 @@
 import ARKit
+import SceneKit
 import AVFoundation
 import Combine
 import UIKit
@@ -12,6 +13,10 @@ struct PlanAlignment {
 
     func toPlan(_ ar: Vec2) -> Vec2 {
         planOrigin + (ar - arOrigin).rotated(byDegrees: rotationDegrees)
+    }
+
+    func toAR(_ plan: Vec2) -> Vec2 {
+        arOrigin + (plan - planOrigin).rotated(byDegrees: -rotationDegrees)
     }
 }
 
@@ -43,6 +48,8 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
     @Published private(set) var destination: HallwayGraph.Destination?
 
     let session = ARSession()
+    /// The pulsing green line on the floor (added to the camera view's 3D scene).
+    let floorPath = FloorPathNode()
     let graph: HallwayGraph
 
     // MARK: Private state
@@ -158,6 +165,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         planPosition = nil
         isAligned = false
         findMy.stop()
+        floorPath.hide()
         speech.stopSpeaking(at: .immediate)
         UIApplication.shared.isIdleTimerDisabled = false
     }
@@ -223,6 +231,11 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
 
         // Distance = how far you still have to walk to the destination along the route.
         distanceRemaining = remaining
+
+        // Green line on the floor from you to the destination, in ARKit's coordinates.
+        var floor = tracker.remainingPath(from: along).map { (point: alignment.toAR($0.point), along: $0.along) }
+        if off > 1 { floor.insert((point: pose.position, along: along), at: 0) }
+        floorPath.update(path: floor, frame: frame)
 
         // The arrow follows the path drawn on the map. Far off it, point straight back to it.
         if off > 3 {
@@ -314,6 +327,7 @@ final class RouteNavigator: NSObject, ObservableObject, ARSessionDelegate {
         say(instruction)
         findMy.stop()
         findMy.arrived()
+        floorPath.hide()
         UIApplication.shared.isIdleTimerDisabled = false
     }
 

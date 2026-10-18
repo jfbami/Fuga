@@ -22,7 +22,7 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            ARCameraView(session: nav.session)
+            ARCameraView(session: nav.session, content: nav.floorPath)
                 .ignoresSafeArea()
             LinearGradient(colors: [.black.opacity(0.6), .black.opacity(0.1), .black.opacity(0.65)],
                            startPoint: .top, endPoint: .bottom)

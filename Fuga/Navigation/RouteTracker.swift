@@ -128,6 +128,16 @@ struct RouteTracker {
         return RouteTracker.wrap(ab.angleDegrees - nudge)
     }
 
+    /// The rest of the route from a distance along it: points and how far along each one is.
+    func remainingPath(from along: Double) -> [(point: Vec2, along: Double)] {
+        let s = min(max(0, along), total)
+        var out = [(point(at: s), s)]
+        for i in 0..<points.count where cumulative[i] > s + 0.05 {
+            out.append((points[i], cumulative[i]))
+        }
+        return out
+    }
+
     /// The next turn ahead of a distance along the route.
     func nextTurn(after along: Double) -> Turn? {
         turns.first { $0.distanceAlong > along - 0.5 }
