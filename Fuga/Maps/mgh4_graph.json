@@ -1,0 +1,130 @@
+{
+  "building": "Mary Gates Hall",
+  "floorLabel": "4th Floor",
+  "frame": "plan meters (see floor.json)",
+  "startNode": "elevator",
+  "startFacingDegrees": -90,
+  "nodes": [
+    {
+      "id": "elevator",
+      "x": 16.27,
+      "y": 36.67,
+      "doorX": 16.18,
+      "doorY": 38.37,
+      "checkpoint": "Elevator: just outside the doors, facing the hallway"
+    },
+    {
+      "id": "lobby",
+      "x": 16.27,
+      "y": 34.88
+    },
+    {
+      "id": "400J-top",
+      "x": 19.72,
+      "y": 31.88
+    },
+    {
+      "id": "416",
+      "x": 19.75,
+      "y": 19.76,
+      "doorX": 21.31,
+      "doorY": 19.76,
+      "checkpoint": "Door of 416 iLounge"
+    },
+    {
+      "id": "junction",
+      "x": 19.75,
+      "y": 14.5,
+      "checkpoint": "Corner where 400J meets 400M"
+    },
+    {
+      "id": "420",
+      "x": 18.4,
+      "y": 14.5,
+      "doorX": 17.64,
+      "doorY": 13.72,
+      "checkpoint": "Double doors of 420 Student Services"
+    },
+    {
+      "id": "430-west",
+      "x": 23.54,
+      "y": 14.5,
+      "doorX": 23.54,
+      "doorY": 13.2,
+      "checkpoint": "West door of 430 Computer Classroom"
+    },
+    {
+      "id": "430-east",
+      "x": 33.72,
+      "y": 14.5,
+      "doorX": 33.72,
+      "doorY": 13.08,
+      "checkpoint": "East door of 430 Computer Classroom"
+    }
+  ],
+  "edges": [
+    [
+      "elevator",
+      "lobby"
+    ],
+    [
+      "lobby",
+      "400J-top"
+    ],
+    [
+      "400J-top",
+      "416"
+    ],
+    [
+      "416",
+      "junction"
+    ],
+    [
+      "junction",
+      "420"
+    ],
+    [
+      "junction",
+      "430-west"
+    ],
+    [
+      "430-west",
+      "430-east"
+    ]
+  ],
+  "destinations": [
+    {
+      "id": "430",
+      "title": "430",
+      "subtitle": "Computer Classroom",
+      "doors": [
+        "430-west",
+        "430-east"
+      ]
+    },
+    {
+      "id": "416",
+      "title": "416",
+      "subtitle": "iLounge",
+      "doors": [
+        "416"
+      ]
+    },
+    {
+      "id": "420",
+      "title": "420",
+      "subtitle": "Student Services",
+      "doors": [
+        "420"
+      ]
+    },
+    {
+      "id": "elevator",
+      "title": "Elevator",
+      "subtitle": "Back to the elevator",
+      "doors": [
+        "elevator"
+      ]
+    }
+  ]
+}

@@ -17,17 +17,23 @@ Adding files: the `Fuga/` folder is synced with the project, so new Swift files 
 
 If the project won't open on your Xcode, regenerate it with [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen && xcodegen`.
 
-## Try it: elevator to 430 in Mary Gates Hall
+## Try it in Mary Gates Hall, 4th floor
 
-1. Build to your iPhone (iOS 17+, any model with ARKit; LiDAR not needed). Allow camera access.
-2. Take the elevator to the **4th floor of Mary Gates Hall**.
-3. Pick **430 Computer Classroom** (or **416 iLounge**).
-4. Step out of the elevator and **face straight down the hallway**, phone upright, then tap **Start**.
-5. Walk. The arrow points along the route and turns green when you face the right way. Turns are spoken 4 m ahead and again at the corner, with **2 vibration pulses for left and 3 for right**. On arrival it says which side the door is on.
+**First, record the map once (Mapping Mode, any iPhone; a Pro is best):**
+1. Open Fuga, tap **Mapping Mode**.
+2. Stand just outside the elevator, facing down the hallway, and tap **Elevator**.
+3. Walk the hallways slowly in both directions (elevator lobby, 400J, 400M past both 430 doors), phone upright.
+4. Stop at a few of the listed spots and tap each one when you're standing there: at least 2 far apart, e.g. the elevator and the east door of 430. More is better.
+5. Tap **Save map**, then **Done**. To put the map on other phones, tap **Share map files**, AirDrop them to a Mac and add both files to `Fuga/Maps/`.
 
-The small map (top right) shows the route and your blue dot. If the dot drifts off the line, walk back to the elevator and tap **I'm at the elevator** to restart.
+**Then navigate from anywhere in the mapped hallways:**
+1. Open Fuga and look around slowly. Within a few seconds it says **Found you** and where you are.
+2. Pick a room (430 Computer Classroom, 416 iLounge, 420 Student Services, or back to the elevator) and tap **Start from here**.
+3. Follow the arrow. Turns are spoken 4 m ahead and at the corner (**2 vibration pulses for left, 3 for right**); on arrival it says which side the door is on. If you wander off, it plans a new route from where you are.
 
-How it stays on track: ARKit follows every step from the elevator. When you walk straight along a hallway, the app compares that with the route and corrects its heading, so being up to about 25° off when you tap Start is fine (tested by replaying the LiDAR walk with `tools/mapping/replay_navigation.py`).
+No map yet? **Start at the elevator** still works: step out of the elevator, face down the hallway, tap Start.
+
+How it works: ARKit saves a 3D map of the hallways (an `ARWorldMap`). Next time, the camera recognizes the hallway and ARKit snaps back into the map's coordinates. The checkpoints you tapped while mapping tie those coordinates to the UW floor plan (2 checkpoints line up to within about 0.4 m, tested on the LiDAR scan). Routes are computed on the phone over a small hallway graph (`Fuga/Maps/mgh4_graph.json`).
 
 ## What's in the app
 
@@ -35,11 +41,13 @@ How it stays on track: ARKit follows every step from the elevator. When you walk
 | --- | --- |
 | `Fuga/Guidance/ExitArrowView.swift` | Find My–style arrow: bearing relative to the phone + distance. Turns green with a haptic tap when you face the right way |
 | `Fuga/Guidance/DistanceLabel.swift` | "13 ft / ahead" label, feet or meters by locale |
-| `Fuga/Navigation/RouteNavigator.swift` | ARKit tracking, start calibration, hallway heading correction, spoken turns, vibration, arrival |
+| `Fuga/Navigation/RouteNavigator.swift` | ARKit tracking, map recognition, Mapping Mode, elevator fallback, rerouting, spoken turns, vibration, arrival |
+| `Fuga/Navigation/HallwayGraph.swift` | Hallway graph + shortest route from any spot to a room's nearest door |
+| `Fuga/Navigation/WorldMapStore.swift` | Saves/loads the ARKit map and its alignment to the floor plan (checkpoint fit) |
 | `Fuga/Navigation/RouteTracker.swift` | Route geometry: progress along the route, look-ahead target, turns (no ARKit, easy to test) |
-| `Fuga/Navigation/Route.swift` | Route model and the MGH 4th-floor destinations + start point |
+| `Fuga/Navigation/Route.swift` | Route model |
 | `Fuga/Navigation/MiniMap.swift`, `ARCameraView.swift` | Debug map and camera background |
-| `Fuga/Routes/*.json` | Routes made by `tools/mapping/route.py` |
+| `Fuga/Maps/` | Hallway graph, plus saved maps (`mgh4.arworldmap`, `mgh4.alignment.json`) if you add them |
 | `tools/mapping/` | Pipeline: floor plan PDF + LiDAR walk -> map, landmarks, routes. See its README |
 
 ## Web demo (no Xcode needed)
