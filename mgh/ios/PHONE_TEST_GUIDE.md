@@ -24,13 +24,13 @@ Apple reference: [Run on a physical device](https://developer.apple.com/document
 
 ## First test: no backend needed
 
-1. Open **Find my location · say a destination**.
+1. The app now opens directly to **Find where I am** and starts looking by itself; there is no capture button and no starting-room selection. It takes one same-frame camera capture at least 1 second apart while tracking is normal. Without a server it saves a 3-frame test; with a server it checks each frame before taking the next and stops when two agree (up to 20 frames / 90 s). Changing floor, returning to the app or tapping **Look again** restarts it.
 2. Select **Floor 4**. Tap **Say your destination**, say “Take me to room 440,” then stop listening if needed. Check that **Requested destination: room 440** appears. This is a request, not verification that a route to 440 exists.
 3. Leave the server address blank for this first capture test.
-4. At one identifiable place near 430 or 440, hold the phone upright, show doors/corners/windows, and tap **Find my starting location**. Keep it fairly steady for the short three-frame capture. You do not scan the floor or need to point at a room number.
-5. Tap **Share camera test**. Send the exported JSON privately to the project owner and note the actual floor, where you stood, and which way you faced. It includes the three submitted JPEGs, same-frame calibration, timestamps, tracking state and ARKit transforms. Do not commit it to GitHub. Captures are diagnostic queries, never mapping references.
+4. Because looking starts on its own, the capture taken right at app launch is wherever you happened to be. Walk to one identifiable place near 430 or 440, hold the phone upright toward doors/corners/windows, and tap **Look again**. Hold it there for about 3 seconds while it saves the test. You do not scan the floor or need to point at a room number.
+5. Expand **Camera test settings & export**, then tap **Share camera test**. Send the exported JSON privately to the project owner and note the actual floor, where you stood, and which way you faced. It includes the submitted JPEGs, same-frame calibration, timestamps, tracking state and ARKit transforms. Do not commit it to GitHub. Captures are diagnostic queries, never mapping references.
 
-The expected capture-only outcome is **Camera test saved**, not a claim that the phone has found its location. Normal Camera-app MOV files cannot substitute for this calibrated frame/pose export.
+A destination is optional for finding the starting location. The expected capture-only outcome is **Camera test saved**, with **Not located yet** status; it does not claim that the phone has found its location. Normal Camera-app MOV files cannot substitute for this calibrated frame/pose export.
 
 ## Then connect the map matcher
 
@@ -42,7 +42,7 @@ work/mgh_localization_env/Scripts/python.exe outputs/MGH_Project/localization/se
 
 The server is not left running by our tests. Start it only for the development session, use a trusted LAN, and stop it with Ctrl+C afterward. The iPhone must reach that computer on the same network. Windows Firewall may need a private-network exception for this process/port; no firewall settings were changed here.
 
-Enter `http://COMPUTER.local:8765` or `http://PRIVATE-LAN-IP:8765` in the app. Replace the example with the computer's real address; `localhost` on the phone means the phone itself. `/health` should report ready. The configuration allows local networking and insecure HTTP only for the private LAN ranges used by this development server; public hosts should use HTTPS. No public backend is deployed. See [Apple ATS local networking](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking).
+Expand **Camera test settings & export** and enter `http://COMPUTER.local:8765` or `http://PRIVATE-LAN-IP:8765` in the app. Replace the example with the computer's real address; `localhost` on the phone means the phone itself. `/health` should report ready. Then tap **Look again** (editing the address does not restart looking by itself). The configuration allows local networking and insecure HTTP only for the private LAN ranges used by this development server; public hosts should use HTTPS. No public backend is deployed. See [Apple ATS local networking](https://developer.apple.com/documentation/bundleresources/information-property-list/nsapptransportsecurity/nsallowslocalnetworking).
 
 Repeat one short quick-look test. The CPU backend checks the three saved frames sequentially, so this is not a demonstrated instant or real-time service. A possible starting-location message needs at least two agreeing calibrated scan-to-ARKit transforms from distinct frames. Different phone positions are compared using their capture-time transforms, not by assuming the phone stood still. This remains a hypothesis for review, not independently validated location accuracy.
 
@@ -66,4 +66,4 @@ For a capture-only file, run its saved requests through the backend and retain t
 - Verified 440 entrance(s), walking path and applicable stair/elevator links.
 - Native tracking/interruption/latency tests and independent location/direction checks.
 
-The existing arrow, path rendering, spoken-turn and haptic code is retained. Both manual and automatic starts remain blocked until the canonical route/doorway work is verified. The public team's graph/alignment files are unreviewed relative to the canonical scan; merging app source does not approve or merge those coordinates. This is general wayfinding, not a validated emergency-navigation system.
+The existing arrow, path rendering, spoken-turn, feedback test and haptic code is retained. Manual starting-room/landmark pickers have been removed from the app UI. The actual scan reconstruction and the old floor-plan display are distinct; see RECONSTRUCTION_TO_NAVIGATION.md. Both manual and automatic starts remain blocked until the canonical route/doorway work is verified. The public team's graph/alignment files are unreviewed relative to the canonical scan; merging app source does not approve or merge those coordinates. This is general wayfinding, not a validated emergency-navigation system.

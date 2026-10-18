@@ -15,8 +15,7 @@ upcoming turns, off-route/back-on-route, position updates, and arrival. Dynamic 
 names and exact distances remain on screen; they are not spoken by these offline clips.
 Apple synthesized speech has been removed entirely. A missing/unplayable clip produces a visible error; there is no alternate narrator.
 
-**To start navigation in an Xcode Debug build:** enable **Enable manual navigation
-test**, select the starting landmark and destination, wait for camera tracking,
+**To start navigation in an Xcode Debug build:** open **Manual navigation test** under **Developer navigation test** on the automatic-location screen, select the starting landmark and destination, wait for camera tracking,
 then tap **Start manual test**. The test route is labeled as an unverified map.
 The same shared Juno player handles narration and direction cues. Start also stops
 any feedback test so it cannot overlap navigation.
@@ -115,7 +114,7 @@ The floor's map ships inside the app, so anyone can open Fuga and go. No setup, 
 
 1. Open Fuga. Under **Where are you?**, pick the room or landmark you're closest to: the Elevator, 416 iLounge, 420 Student Services, or either door of 430 Computer Classroom.
 2. Stand in front of that door, facing it, phone upright. That tells Fuga exactly where you are and which way you're facing.
-3. In an Xcode Debug build, enable **Enable manual navigation test**, pick a room under **Where to?**, and tap **Start manual test**. It tells you which way to turn first (usually "Turn around").
+3. In an Xcode Debug build, open **Manual navigation test**, pick a room under **Where to?**, and tap **Start manual test**. It tells you which way to turn first (usually "Turn around").
 4. Follow the arrow. It points along the route drawn on the map: down the hallway you're in, swinging to the next hallway just before each corner. The number under it is how far you still have to walk to the room.
 5. Look through the camera: a **solid green line on the hallway floor** runs from your feet to the room, like the route in Apple Maps, with a soft highlight sweeping along it. Walls the phone sees hide it where it turns a corner (Pro iPhones use the LiDAR 3D mesh; other iPhones use the wall planes ARKit detects).
 6. Vibration works like Find My: when you turn to face the way the arrow points, it turns green with a firm **snap**, then **taps** while you keep facing that way, faster and stronger as you get closer. Face the wrong way and it goes quiet. At a corner the arrow swings, the taps stop, and they come back when you've turned. Turns are also spoken 4 m ahead and at the corner, and on arrival a short burst plays, it says which side the door is on, and the arrow points at the door.

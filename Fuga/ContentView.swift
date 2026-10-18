@@ -1,21 +1,18 @@
 import SwiftUI
 
 /// Screens over the live camera:
-/// 1. Start: "Where are you?" (pick the room or landmark you're next to), "Where to?", Start.
+/// 1. Start: find the starting location from the camera; destination input is independent.
 /// 2. Guidance: Find My–style arrow, distance, next instruction, spoken turns and vibration.
-///    "I'm at a landmark" re-pins your position if it drifts. Juno narration and direction
+///    Find where I am looks again from the camera. Juno narration and direction
 ///    cues and off-course nudges (pulses when you face well away from the route).
 struct ContentView: View {
     @StateObject private var nav: RouteNavigator
-    @State private var here: String?
-    @State private var destination: HallwayGraph.Destination?
     @State private var showMap = true
-    @State private var manualTest = false
-    @State private var showRepin = false
     @State private var showQuickLook = false
     @StateObject private var voice: VoiceGuidance
-    @StateObject private var haptics: OffCourseHapticPlayer
     @StateObject private var feedbackTest: FeedbackTest
+    @StateObject private var haptics: OffCourseHapticPlayer
+    @State private var showManualTest = false
     @State private var offCourseHaptics = OffCourseHaptics()
     @Environment(\.scenePhase) private var scenePhase
 
@@ -31,25 +28,37 @@ struct ContentView: View {
         _feedbackTest = StateObject(wrappedValue: FeedbackTest(voice: navigator.narration, haptics: hapticPlayer))
     }
 
-    private var hereNode: HallwayGraph.Node? { here.flatMap { nav.graph.node($0) } }
-
     var body: some View {
         ZStack {
-            ARCameraView(session: nav.session, content: nav.floorPath)
-                .ignoresSafeArea()
-            LinearGradient(colors: [.black.opacity(0.6), .black.opacity(0.1), .black.opacity(0.65)],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
-                .allowsHitTesting(false)
+            if nav.phase != .idle {
+                ARCameraView(session: nav.session, content: nav.floorPath)
+                    .ignoresSafeArea()
+                LinearGradient(colors: [.black.opacity(0.6), .black.opacity(0.1), .black.opacity(0.65)],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(false)
+            }
 
             switch nav.phase {
             case .idle: startScreen
             case .navigating, .arrived: guidanceScreen
             }
         }
-        .onAppear { nav.runCamera() }
+        .onAppear {
+            nav.runCamera()
+        }
         .onDisappear { nav.pauseCamera() }
-        .sheet(isPresented: $showQuickLook) { QuickLookView(session: nav.session) }
+        .sheet(isPresented: $showQuickLook) {
+            QuickLookView(session: nav.session, onCameraWork: { feedbackTest.stop() })
+        }
+        #if DEBUG
+        .sheet(isPresented: $showManualTest) {
+            ManualNavigationTestView(nav: nav) { landmark, destination in
+                feedbackTest.stop()
+                nav.start(at: landmark, to: destination, manualTest: true)
+            }
+        }
+        #endif
         .task(id: scenePhase) { await runCues() }
         .onDisappear {
             feedbackTest.stop()
@@ -58,7 +67,7 @@ struct ContentView: View {
             haptics.stop()
         }
         .onChange(of: showQuickLook) { _, shown in
-            if shown { feedbackTest.stop(); voice.stop(); haptics.stop() }
+            if shown { voice.stop(); haptics.stop() }
         }
     }
 
@@ -74,11 +83,15 @@ struct ContentView: View {
             return
         }
         while !Task.isCancelled {
-            if nav.phase == .navigating, nav.trackingReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
+            if feedbackTest.running {
+                // The idle-screen feedback test owns the shared voice player.
+                // Silencing it every 250 ms would cut off its preview clips.
+                offCourseHaptics.reset()
+            } else if nav.phase == .navigating, nav.trackingReady, !showQuickLook, nav.distanceRemaining >= 1.5 {
                 // Don't talk over a spoken turn instruction.
-                if !nav.isSpeaking {
-                    voice.update(bearing: nav.relativeBearing, distance: nav.distanceRemaining)
-                }
+                // Turn announcements and direction reminders share one Juno player;
+                // update() waits while an announcement is playing.
+                voice.update(bearing: nav.relativeBearing, distance: nav.distanceRemaining)
                 if let strength = offCourseHaptics.update(bearing: nav.relativeBearing,
                                                           distance: nav.distanceRemaining,
                                                           now: ProcessInfo.processInfo.systemUptime) {
@@ -96,139 +109,22 @@ struct ContentView: View {
         haptics.stop()
     }
 
-    // MARK: Start
+    // MARK: Automatic starting-location entry
 
     private var startScreen: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 14) {
-                Text("\(nav.graph.building.uppercased()) · \(nav.graph.floorLabel.uppercased())")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.7))
-
-                Button { showQuickLook = true } label: {
-                    Label("Find my location · say a destination", systemImage: "camera.viewfinder")
-                        .font(.headline).frame(maxWidth: .infinity).padding(12)
-                }
-                .buttonStyle(.borderedProminent).tint(.fugaGreen)
-                Text("Camera recognition test. Walking guidance is awaiting location and path verification.")
-                    .font(.footnote).foregroundStyle(.white.opacity(0.8))
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Audio & vibration check").font(.headline)
-                    Button("Test Juno") { feedbackTest.stop(); voice.testVoice() }
-                    HStack {
-                        Button("Subtle vibration") { feedbackTest.stop(); haptics.play(.subtle) }
-                        Button("Strong vibration") { feedbackTest.stop(); haptics.play(.strong) }
-                    }
-                    Button(feedbackTest.running ? "Stop test" : "Test voice & vibration") { feedbackTest.toggle() }
-                    if !feedbackTest.step.isEmpty { Text(feedbackTest.step) }
-                    Text(voice.status)
-                    Text(haptics.status)
-                    Text("These buttons test your phone directly. Automatic route cues remain off until walking guidance is verified.")
-                        .font(.caption)
-                }
-                .buttonStyle(.bordered)
-                .foregroundStyle(.white)
-
-                sectionTitle("Manual starting-point demo", subtitle: "Choose your current landmark and destination below.")
-                #if DEBUG
-                Toggle("Enable manual navigation test", isOn: $manualTest)
-                    .tint(.fugaGreen).foregroundStyle(.white)
-                Text("Unverified map — testing only. Choose a known starting point and face its door. This is not verified evacuation guidance.")
-                    .font(.footnote).foregroundStyle(.yellow)
-                #endif
-                VStack(spacing: 8) {
-                    ForEach(nav.graph.landmarks, id: \.id) { node in
-                        choice(node.landmark ?? node.id, selected: here == node.id) {
-                            here = node.id
-                            if let d = destination, d.doors.contains(node.id) { destination = nil }
-                        }
-                    }
-                }
-
-                if let hereNode {
-                    HStack(alignment: .top, spacing: 12) {
-                        Text("Stand in front of the \(hereNode.landmark ?? "") door, facing it. Hold your phone upright.")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.9))
-                            .fixedSize(horizontal: false, vertical: true)
-                        Spacer(minLength: 0)
-                        MiniMap(graph: nav.graph, position: hereNode.point,
-                                headingDegrees: hereNode.facingDoorDegrees ?? 0)
-                            .frame(width: 100, height: 115)
-                    }
-                    .padding(12)
-                    .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
-                    .accessibilityElement(children: .combine)
-
-                    sectionTitle("Where to?", subtitle: nil)
-                    VStack(spacing: 8) {
-                        ForEach(nav.graph.destinations.filter { !$0.doors.contains(hereNode.id) }) { d in
-                            choice("\(d.title) · \(d.subtitle)", selected: destination == d) { destination = d }
-                        }
-                    }
-                }
-
-                if let message = nav.trackingMessage {
-                    Label(message, systemImage: "camera.viewfinder")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.yellow)
-                }
-
-                Button {
-                    feedbackTest.stop()
-                    if let hereNode, let destination {
-                        nav.start(at: hereNode, to: destination, manualTest: manualTest)
-                    }
-                } label: {
-                    Text(startLabel).font(.title3.bold()).frame(maxWidth: .infinity).padding(.vertical, 16)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.fugaGreen)
-                .disabled(!NavigationAccess.permitsStart(verified: RouteNavigator.guidanceEnabled, manualTest: manualTest) || hereNode == nil || destination == nil || !nav.trackingReady)
-                if let error = nav.startError { Text(error).foregroundStyle(.yellow) }
-            }
-            .padding(20)
-        }
+        QuickLookView(session: nav.session, showsCloseButton: false,
+                      onCameraWork: { feedbackTest.stop() },
+                      feedbackAction: { feedbackTest.toggle() },
+                      feedbackRunning: feedbackTest.running, feedbackStep: feedbackTest.step,
+                      manualTestAction: manualTestAction)
     }
 
-    private var startLabel: String {
-        if !NavigationAccess.permitsStart(verified: RouteNavigator.guidanceEnabled, manualTest: manualTest) {
-            #if DEBUG
-            return "Enable manual navigation test above"
-            #else
-            return "Navigation awaiting map verification"
-            #endif
-        }
-        if hereNode == nil { return "Pick where you are" }
-        if destination == nil { return "Pick where to go" }
-        return nav.trackingReady ? (manualTest ? "Start manual test" : "Start") : "Waiting for camera tracking…"
-    }
-
-    private func sectionTitle(_ title: String, subtitle: String?) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title).font(.title.bold()).foregroundStyle(.white)
-            if let subtitle {
-                Text(subtitle).font(.subheadline).foregroundStyle(.white.opacity(0.8))
-            }
-        }
-        .padding(.top, 4)
-        .accessibilityAddTraits(.isHeader)
-    }
-
-    private func choice(_ text: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack {
-                Text(text).font(.headline).multilineTextAlignment(.leading)
-                Spacer()
-                if selected { Image(systemName: "checkmark.circle.fill").font(.title3) }
-            }
-            .foregroundStyle(.white)
-            .padding(14)
-            .background(selected ? Color.fugaGreen.opacity(0.9) : Color.white.opacity(0.14),
-                        in: RoundedRectangle(cornerRadius: 14))
-        }
-        .accessibilityAddTraits(selected ? .isSelected : [])
+    private var manualTestAction: (() -> Void)? {
+        #if DEBUG
+        return { feedbackTest.stop(); showManualTest = true }
+        #else
+        return nil
+        #endif
     }
 
     // MARK: Guidance
@@ -312,22 +208,17 @@ struct ContentView: View {
                     .buttonStyle(.bordered)
                     .tint(.white)
                 Spacer()
-                Button { showRepin = true } label: {
-                    Label("I'm at a landmark", systemImage: "mappin.and.ellipse")
+                Button { showQuickLook = true } label: {
+                    Label("Find where I am", systemImage: "camera.viewfinder")
                 }
                 .buttonStyle(.bordered)
                 .tint(.white)
-                .accessibilityHint("Tell Fuga which room you're next to, to fix your position")
+                .accessibilityHint("Check your location using the camera")
             }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-        .confirmationDialog("Which one are you next to?", isPresented: $showRepin, titleVisibility: .visible) {
-            ForEach(nav.graph.landmarks, id: \.id) { node in
-                Button(node.landmark ?? node.id) { nav.repin(at: node) }
-            }
-            Button("Cancel", role: .cancel) {}
-        }
+
     }
 }
 

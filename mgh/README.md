@@ -84,3 +84,10 @@ The public app work through `nav/route-guidance` fbcfcc1 is merged into this bra
 The teammate should follow [PHONE_TEST_GUIDE.md](ios/PHONE_TEST_GUIDE.md). First build in Xcode and capture without a server. Native compilation, image orientation/calibration verification and real iPhone tests remain outstanding. The Windows checks passed 18 tests, a real model/image HTTP smoke check and Swift syntax/plist checks; none establishes phone accuracy or reliable quick-look latency. The canonical revision-12 receipt is in `ios/archive_verification.json` after the transaction completes.
 
 Both manual and automatic guidance starts are blocked until canonical registration and entrance/path checks. The external public graph/alignment files retained from the app branch remain unreviewed; they have not become canonical anchors. Floors 2/3 have separate reconstructed prototypes, but contextual matching refuses them until recognition maps exist. Later recognition changes require new held-out data; consumed A/B scores are unchanged historical results. Original phone footage/images, floor plans and extracted private plan coordinates stay out of this repository.
+
+
+## Primary camera location entry
+
+The idle screen now opens directly to **Find where I am**. Starting-room/landmark pickers are removed; a destination is optional for checking location. The latest nav update a2dce60 (voice/vibration test, removal of the old 3D display, typed-array capture fix) is preserved. Feedback samples remain labelled as a test. The location display distinguishes unconfirmed, checking, unavailable-map and unverified-candidate states; capture-only export does not claim a location fix.
+
+Read [how reconstruction relates to navigation](ios/RECONSTRUCTION_TO_NAVIGATION.md). LiDAR-supported visual references feed the experimental matcher; the colored mesh viewer mainly supports inspection. No reliable camera pose is yet connected to a registered route graph. Route/entrance verification, calibrated independent-phone validation and a native build of the revised screen remain pending. No core matcher thresholds or scan frames changed.

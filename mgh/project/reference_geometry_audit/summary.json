@@ -1,0 +1,45 @@
+{
+  "date": "2026-10-17",
+  "framework": {
+    "feature_extractor": "DISK",
+    "matcher": "LightGlue",
+    "localization_pipeline": "custom depth-backed 2D-to-3D/PnP/multi-reference pipeline",
+    "full_hloc_integrated": false,
+    "full_keryx_integrated": false,
+    "arkit_role": "iPhone motion tracking and calibrated frame capture; native build pending"
+  },
+  "query_frames": 7,
+  "pairs_replayed_with_final_source": 85,
+  "fixed_candidate_pool": true,
+  "held_out_evaluation": false,
+  "calibration": "missing",
+  "metric_pose_attempts": 0,
+  "first_frame": {
+    "ordinal": 0,
+    "manually_read_query_room": "430",
+    "legacy_top_reference": 10883,
+    "manually_read_legacy_reference_room": "440",
+    "fundamental_top_reference": 9433,
+    "coverage_weighted_top_reference": 9433,
+    "manually_read_new_reference_room": "430",
+    "correct_reference": {
+      "raw_matches": 118,
+      "fundamental_inliers": 106,
+      "weighted_score": 29.577861985731463
+    },
+    "misleading_reference": {
+      "raw_matches": 125,
+      "fundamental_inliers": 69,
+      "weighted_score": 12.731008485447143
+    }
+  },
+  "count_top_changed": 1,
+  "coverage_top_changed": 2,
+  "software_tests_passed": 4,
+  "default_matcher_changed": false,
+  "phone_app_changed": false,
+  "pose_usable_for_app": false,
+  "navigation_enabled": false,
+  "implementation_sha256": "3170885c76ebdabec509fa6b2fec1cc23a1608db8ffade341d1ae883ad14a2cb",
+  "limits": "One exposed video, correlated frames, no intrinsics or surveyed poses. Wrong-room references still retain many 2D inliers. No reliable room identity/metric accuracy claim."
+}

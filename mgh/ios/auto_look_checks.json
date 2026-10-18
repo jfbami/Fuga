@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-18",
+  "decision": "D029",
+  "swift_syntax": {
+    "swift_files_parsed": 6,
+    "syntax_errors": [],
+    "plist_valid": true,
+    "native_ios_build_run": false
+  },
+  "quicklook_tests": "12 passed",
+  "behavior": {
+    "starts_on_screen_open": true,
+    "capture_button": false,
+    "frame_spacing_s": 1.0,
+    "max_frames_with_server": 20,
+    "max_seconds": 90,
+    "capture_only_frames": 3,
+    "floor_2_3": "map unavailable, no capture",
+    "stops_on_two_agreeing_frames": true,
+    "destination_and_feedback_usable_while_looking": true,
+    "result_is_unverified_candidate": true
+  },
+  "native_build_run": false,
+  "on_device_test_run": false,
+  "navigation_enabled": false,
+  "matcher_changed": false,
+  "note": "Grammar parse plus Python export-review tests; a ternary try placement was fixed by inspection. No Swift compiler run."
+}
