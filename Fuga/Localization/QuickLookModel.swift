@@ -14,6 +14,18 @@ final class QuickLookModel: ObservableObject {
     @Published private(set) var message = "Hold the phone up toward the hallway."
     @Published private(set) var locationState: LocationState = .unconfirmed
     @Published private(set) var exportURL: URL?
+    /// Set only with a possible (unverified) location: the agreeing capture-time alignment
+    /// and the server/map it came from, so a draft route preview can be requested.
+    @Published private(set) var candidate: Candidate?
+
+    struct Candidate: Equatable {
+        let id = UUID()
+        let scanFromAR: simd_float4x4
+        let server: URL
+        let coordinateFrameID: String
+        let mapManifestSHA256: String
+        let floor: Int
+    }
     private var task: Task<Void, Never>?
     private var generation = UUID()
 
@@ -26,7 +38,7 @@ final class QuickLookModel: ObservableObject {
     private static let captureOnlyFrames = 3
 
     func cancel() {
-        generation = UUID(); task?.cancel(); task = nil; busy = false
+        generation = UUID(); task?.cancel(); task = nil; busy = false; candidate = nil
         message = "Hold the phone up toward the hallway."
         locationState = .unconfirmed
     }
@@ -75,7 +87,10 @@ final class QuickLookModel: ObservableObject {
                     }
                     message = "Looking around… checking view \(requests.count). Turn slowly if nothing happens."
                     responses.append(try await Self.post(encoded, to: url))
-                    if Self.consistent(requests: requests, responses: responses) {
+                    if let alignment = Self.consistentAlignment(requests: requests, responses: responses) {
+                        candidate = Candidate(scanFromAR: alignment, server: url.deletingLastPathComponent(),
+                            coordinateFrameID: responses.last?["coordinate_frame_id"] as? String ?? "",
+                            mapManifestSHA256: responses.last?["map_manifest_sha256"] as? String ?? "", floor: floor)
                         finding = .candidate
                         outcome = "Possible starting location found. Saved for review; the walking route still needs verification."
                         break
@@ -133,15 +148,19 @@ final class QuickLookModel: ObservableObject {
 
     /// All transforms are capture-time pairs in the same AR world and scan map.
     /// Different camera positions should yield the SAME scan-from-AR transform.
-    private static func consistent(requests: [[String: Any]], responses: [[String: Any]]) -> Bool {
+    /// Returns the alignment of the latest frame that agrees with an earlier one, or nil.
+    private static func consistentAlignment(requests: [[String: Any]], responses: [[String: Any]]) -> simd_float4x4? {
         let frames = Set(responses.compactMap { $0["coordinate_frame_id"] as? String })
         let maps = Set(responses.compactMap { $0["map_manifest_sha256"] as? String })
         let alignments = zip(requests, responses).compactMap { pair in
             QuickLookGeometry.alignment(request: pair.0, response: pair.1)
         }
-        return frames.count == 1 && maps.count == 1 && alignments.count >= 2 &&
-            alignments.indices.contains { i in alignments.indices.contains { j in
-                i != j && QuickLookGeometry.agree(alignments[i], alignments[j])
-            } }
+        guard frames.count == 1, maps.count == 1, alignments.count >= 2 else { return nil }
+        for j in alignments.indices.reversed() {
+            if alignments.indices.contains(where: { i in i != j && QuickLookGeometry.agree(alignments[i], alignments[j]) }) {
+                return alignments[j]
+            }
+        }
+        return nil
     }
 }

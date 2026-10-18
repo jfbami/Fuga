@@ -37,7 +37,7 @@ A destination is optional for finding the starting location. The expected captur
 On the Windows computer with the canonical project and existing Python environment, from that workspace:
 
 ```powershell
-work/mgh_localization_env/Scripts/python.exe outputs/MGH_Project/localization/serve_phone_localizer.py --map outputs/MGH_Project/localization/visual_map_v4_low_rotation --host 0.0.0.0 --port 8765
+work/mgh_localization_env/Scripts/python.exe outputs/MGH_Project/localization/serve_phone_localizer.py --map outputs/MGH_Project/localization/visual_map_v4_low_rotation --route-graph outputs/MGH_Project/routes/scan_b9dca4993d_floor4_draft/route_graph.json --host 0.0.0.0 --port 8765
 ```
 
 The server is not left running by our tests. Start it only for the development session, use a trusted LAN, and stop it with Ctrl+C afterward. The iPhone must reach that computer on the same network. Windows Firewall may need a private-network exception for this process/port; no firewall settings were changed here.
@@ -47,6 +47,17 @@ Expand **Camera test settings & export** and enter `http://COMPUTER.local:8765` 
 Repeat one short quick-look test. The CPU backend checks the three saved frames sequentially, so this is not a demonstrated instant or real-time service. A possible starting-location message needs at least two agreeing calibrated scan-to-ARKit transforms from distinct frames. Different phone positions are compared using their capture-time transforms, not by assuming the phone stood still. This remains a hypothesis for review, not independently validated location accuracy.
 
 Floors 2/3 can export capture tests, but their recognition maps are not built/approved. Contextual backend requests for those floors return `selected_floor_map_unavailable`; they do not silently search floor 4. GPS is not fused by this implementation. The selected floor supplies context; GPS remains a planned building-context aid, never a substitute for indoor coordinates.
+
+## Second test: location plus draft route preview
+
+With the server running (including `--route-graph`, which is private data on the owner's computer), say or type **440** (or 416/430), then point the phone down the floor-4 hallway near 430/440. Each frame takes about 7 s on the server. Once two frames agree, the status shows **Possible location — unverified**, and an orange **DRAFT ROUTE PREVIEW · UNVERIFIED MAP · NOT GUIDANCE** panel appears with the existing arrow and distance. The green line is drawn on the floor in the small camera view.
+
+- The preview never speaks or vibrates and does not start walking guidance (`RouteNavigator.guidanceEnabled` stays false).
+- The route follows where the original scan walked. It ends at the room sign's viewpoint, not a verified doorway. 420 has no target.
+- Walk a few metres and note whether the line stays on the corridor floor and the arrow points along it. If you move more than 3 m off the line, it says so; tap **Look again**.
+- Share the export as before, and note the actual spot, facing, and whether the line and arrow looked right.
+
+On 2026-10-18 the first capture (4C1B520E) was replayed through this exact chain offline: the route started within 5 cm of the phone's own position, was 12.1 m to the 440 sign viewpoint, and the arrow pointed about 2° left. That is a same-capture consistency check, not a walked test.
 
 ## Reviewing a private export
 

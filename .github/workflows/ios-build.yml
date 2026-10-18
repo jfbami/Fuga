@@ -1,7 +1,7 @@
 name: iOS build and voice assets
 on:
   push:
-    branches: [codex/juno-native-fix, nav/route-guidance]
+    branches: [codex/juno-native-fix, nav/route-guidance, mgh-localization]
   pull_request:
     paths: ['Fuga/**', 'Fuga.xcodeproj/**', 'Config/**', 'tests/**', '.github/workflows/ios-build.yml']
 permissions:
@@ -16,6 +16,8 @@ jobs:
           swiftc Fuga/Guidance/VoiceCue.swift Fuga/Guidance/OffCourseHaptics.swift tests/main.swift -o /tmp/fuga-tests
           /tmp/fuga-tests
           python3 -m unittest discover -s tests -p 'test_*.py'
+          swiftc Fuga/Navigation/RouteTracker.swift Fuga/Localization/RoutePreviewMath.swift tests/route_preview/main.swift -o /tmp/fuga-route-preview-tests
+          /tmp/fuga-route-preview-tests
       - name: Build native iOS app
         run: xcodebuild -project Fuga.xcodeproj -scheme Fuga -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/fuga-build CODE_SIGNING_ALLOWED=NO build
       - name: Check bundled Juno audio

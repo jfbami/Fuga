@@ -12,19 +12,30 @@ struct QuickLookView: View {
     @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = QuickLookModel()
     @StateObject private var voice = DestinationVoice()
+    @StateObject private var preview = RoutePreview()
     @State private var floor = 4
     @State private var destination = ""
     @AppStorage("mghDevelopmentServer") private var endpoint = ""
 
     private func look() {
+        preview.clear()
         model.autoLocate(session: session, floor: floor, destination: destination, endpoint: endpoint)
+    }
+
+    /// Draws the draft route (line + arrow, no voice or vibration) once there is a possible
+    /// location and a destination room. Guidance itself stays off.
+    private func updatePreview() {
+        guard let candidate = model.candidate, let room = DestinationVoice.room(in: destination) else {
+            preview.clear(); return
+        }
+        preview.start(session: session, candidate: candidate, room: room)
     }
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    ARCameraView(session: session)
+                    ARCameraView(session: session, content: preview.floorPath)
                         .frame(height: 230).clipShape(RoundedRectangle(cornerRadius: 12))
                         .accessibilityLabel("Live hallway camera")
                 }
@@ -54,6 +65,26 @@ struct QuickLookView: View {
                     Text(model.message).accessibilityLabel(model.message)
                     if !model.busy && floor == 4 {
                         Button("Look again") { look() }
+                    }
+                    if preview.state != .off {
+                        VStack(spacing: 10) {
+                            Text("DRAFT ROUTE PREVIEW · UNVERIFIED MAP · NOT GUIDANCE")
+                                .font(.caption.bold()).foregroundStyle(.orange)
+                            if preview.state == .showing {
+                                if preview.offRoute {
+                                    Text("You're more than 3 m from the drawn route. Tap Look again.")
+                                } else {
+                                    ExitArrowView(relativeBearing: preview.relativeBearing,
+                                                  distanceMeters: preview.distanceRemaining, size: 110)
+                                }
+                            } else if preview.state == .requesting {
+                                ProgressView()
+                            }
+                            Text(preview.summary).font(.footnote).foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .listRowBackground(Color.black.opacity(0.85))
+                        .foregroundStyle(.white)
                     }
                 }
                 if let feedbackAction {
@@ -94,10 +125,12 @@ struct QuickLookView: View {
             // Looking starts by itself; the floor is search context, the destination is independent.
             .onAppear { look() }
             .onChange(of: floor) { _, _ in look() }
+            .onChange(of: model.candidate) { _, _ in updatePreview() }
+            .onChange(of: destination) { _, _ in if model.candidate != nil { updatePreview() } }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .active { look() } else { model.cancel(); voice.stop() }
+                if phase == .active { look() } else { preview.clear(); model.cancel(); voice.stop() }
             }
-            .onDisappear { model.cancel(); voice.stop() }
+            .onDisappear { preview.clear(); model.cancel(); voice.stop() }
         }
     }
 }
