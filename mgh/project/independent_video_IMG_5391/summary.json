@@ -1,0 +1,48 @@
+{
+  "video_filename": "IMG_5391.MOV",
+  "sha256": "a653707083f994b015671e1806084f036fd8eeab5e7492302a4c92b3759917ca",
+  "duration_seconds": 12.996666666666666,
+  "decoded_frame_count": 779,
+  "width": 1080,
+  "height": 1920,
+  "phone": "iPhone 14",
+  "appearance_query_count": 7,
+  "metric_pose_queries_attempted": 0,
+  "reason_metric_pose_not_attempted": "No usable per-frame camera intrinsics or ARKit poses found; photo calibration is not reused for stabilized/cropped video.",
+  "appearance_matches_are_not_room_or_pose_verification": true,
+  "automated_ocr_run": false,
+  "visual_sign_observations": [
+    {
+      "room": "430",
+      "name": "Computer Classroom",
+      "ordinal": 0,
+      "timestamp_ms": 0
+    },
+    {
+      "room": "440",
+      "name": "Team & Quiet Labs",
+      "ordinal": 480,
+      "timestamp_ms": 8008.333333333335
+    }
+  ],
+  "floor": 4,
+  "floor_source": "Inferred from visually read 430/440 signs and existing MGH evidence, not GPS altitude or user floor input for this clip.",
+  "surveyed_ground_truth": false,
+  "used_as_mapping_reference": false,
+  "pose_usable_for_app": false,
+  "navigation_enabled": false,
+  "map_manifest_sha256": "e4dccbe1940026d388e692cdd8b2ab0c1221ec78bc11f0f0cc2c94dcb76bcf46",
+  "caveat": "The seven adjacent frames are correlated samples from one clip, not seven independent validation cases.",
+  "manual_retrieval_review": {
+    "query_ordinal": 0,
+    "visually_read_query_room": "430",
+    "top_appearance_reference_rows": [
+      10883,
+      10910
+    ],
+    "visually_read_reference_room": "440",
+    "review_method": "Manual inspection of saved query/reference comparison; not automated OCR",
+    "implication": "Appearance-only ranking can confuse room identity despite numerous local feature matches; floor context alone cannot distinguish these rooms.",
+    "proposed_next_step": "Implement room-sign OCR as contextual evidence and geometrically verify calibrated frame poses; no room label is promoted to a doorway or exact camera pose."
+  }
+}
