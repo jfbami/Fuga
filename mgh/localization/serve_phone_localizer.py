@@ -1,6 +1,8 @@
-"""Local research backend for an existing phone app: POST /localize.
+"""Local research backend for an existing phone app: POST /localize, optional POST /route.
 
-No route or floor-plan alignment is invented. Start on localhost by default;
+No route or floor-plan alignment is invented. /route only serves a DRAFT route graph
+in the same scan frame as the map when one is passed with --route-graph, and always
+marks it unverified; it never enables guidance. Start on localhost by default;
 use --host explicitly for a trusted development network.
 """
 import argparse
@@ -15,8 +17,13 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
+import sys
+
 import mgh_localizer as core
 import phone_localizer as phone
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'routes'))
+import scan_route
 
 MAX_BODY_BYTES = 20 * 1024 * 1024
 
@@ -106,7 +113,57 @@ def localize_payload(payload, engine):
     return result
 
 
-def handler_for(engine):
+class DraftRouter:
+    """Serves one draft scan-frame route graph; refuses anything outside its frame/floor."""
+    def __init__(self, graph_path, engine):
+        raw = Path(graph_path).read_bytes()
+        self.graph = json.loads(raw)
+        self.graph_hash = hashlib.sha256(raw).hexdigest()
+        if self.graph.get('coordinate_frame_id') != engine.manifest['coordinate_frame_id']:
+            raise ValueError('Route graph and recognition map use different coordinate frames.')
+        self.map_hash = engine.manifest_hash
+        self.frame = engine.manifest['coordinate_frame_id']
+
+
+def _vector(value, name):
+    if not isinstance(value, list) or len(value) != 3 or any(
+            isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in value):
+        raise ValueError(f'{name} must be three finite numbers.')
+    return [float(v) for v in value]
+
+
+def route_payload(payload, router):
+    if router is None:
+        return dict(ok=False, status='route_graph_not_loaded', verified=False, guidance_allowed=False)
+    if not isinstance(payload, dict):
+        raise ValueError('Expected a JSON object.')
+    if payload.get('coordinate_frame_id') != router.frame or payload.get('map_manifest_sha256') != router.map_hash:
+        raise ValueError('Pose is not from this server recognition map.')
+    if payload.get('building_id') != 'MGH' or payload.get('selected_floor') != router.graph.get('floor'):
+        return dict(ok=False, status='no_draft_route_for_floor', verified=False, guidance_allowed=False)
+    room = payload.get('destination_room')
+    if not isinstance(room, str) or not room.isdigit() or len(room) > 5:
+        raise ValueError('destination_room must be a room number such as "440".')
+    position = _vector(payload.get('position_scan_m'), 'position_scan_m')
+    forward = _vector(payload.get('forward_scan'), 'forward_scan')
+    horizontal = math.hypot(forward[0], forward[2])
+    plan = scan_route.plan(router.graph, (position[0], position[2]),
+                           (forward[0] / horizontal, forward[2] / horizontal) if horizontal > 0.1 else None,
+                           f'MGH:{router.graph["floor"]}:{room}')
+    common = dict(destination_room=room, coordinate_frame_id=router.frame, map_manifest_sha256=router.map_hash,
+                  route_graph_sha256=router.graph_hash, route_status=router.graph.get('status'),
+                  verified=False, guidance_allowed=False,
+                  note='Draft preview: corridors are the scan walk, the target is a sign viewpoint, not a doorway.')
+    if not plan['ok']:
+        return dict(ok=False, status='no_route', reason=plan['reason'], **common)
+    nodes = {n['id']: n for n in router.graph['nodes']}
+    path = [[position[0], position[2]]] + [[nodes[i]['x'], nodes[i]['z']] for i in plan['path']]
+    return dict(ok=True, status='draft_route_preview', meters=plan['meters'], snap_m=plan['snap_m'],
+                initial_turn_degrees=plan['initial_turn_degrees'], target_id=plan['target'],
+                path_scan_xz=path, **common)
+
+
+def handler_for(engine, router=None):
     class Handler(BaseHTTPRequestHandler):
         def respond(self, code, value):
             body = json.dumps(value, allow_nan=False).encode('utf-8')
@@ -120,10 +177,11 @@ def handler_for(engine):
             if self.path != '/health':
                 return self.respond(404, dict(error='Not found'))
             self.respond(200, dict(status='ready', coordinate_frame_id=engine.manifest['coordinate_frame_id'],
-                map_manifest_sha256=engine.manifest_hash, navigation_enabled=False))
+                map_manifest_sha256=engine.manifest_hash, navigation_enabled=False,
+                draft_route_loaded=router is not None))
 
         def do_POST(self):
-            if self.path != '/localize':
+            if self.path not in ('/localize', '/route'):
                 return self.respond(404, dict(error='Not found'))
             try:
                 length = int(self.headers.get('Content-Length', '0'))
@@ -131,7 +189,8 @@ def handler_for(engine):
                     return self.respond(413, dict(error='Request body limit exceeded or missing length'))
                 if self.headers.get_content_type() != 'application/json':
                     return self.respond(415, dict(error='Use application/json'))
-                result = localize_payload(json.loads(self.rfile.read(length)), engine)
+                body = json.loads(self.rfile.read(length))
+                result = localize_payload(body, engine) if self.path == '/localize' else route_payload(body, router)
                 self.respond(200, result)
             except (ValueError, KeyError, TypeError, OSError) as error:
                 self.respond(400, dict(error=str(error)))
@@ -145,9 +204,12 @@ def main():
     parser.add_argument('--host', default='127.0.0.1')
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--retrieval', choices=['legacy', 'mutual_nn'], default='legacy')
+    parser.add_argument('--route-graph', type=Path, default=None,
+                        help='Optional DRAFT scan-frame route graph for preview only (private data).')
     args = parser.parse_args()
     engine = PhoneEngine(args.map, args.retrieval)
-    server = HTTPServer((args.host, args.port), handler_for(engine))
+    router = DraftRouter(args.route_graph, engine) if args.route_graph else None
+    server = HTTPServer((args.host, args.port), handler_for(engine, router))
     server.timeout = 60
     print(f'Phone localization backend ready at http://{args.host}:{args.port}; navigation disabled.', flush=True)
     try:
