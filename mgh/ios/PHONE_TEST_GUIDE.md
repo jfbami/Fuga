@@ -48,6 +48,15 @@ Repeat one short quick-look test. The CPU backend checks the three saved frames 
 
 Floors 2/3 can export capture tests, but their recognition maps are not built/approved. Contextual backend requests for those floors return `selected_floor_map_unavailable`; they do not silently search floor 4. GPS is not fused by this implementation. The selected floor supplies context; GPS remains a planned building-context aid, never a substitute for indoor coordinates.
 
+### Easiest: Tailscale (laptop can stay at home)
+
+The phone reaches the laptop over Tailscale from anywhere, including cellular, so nobody carries the laptop to the building and nothing is exposed to the public internet.
+
+1. Laptop: keep it on, with Tailscale connected. Start the server bound to its Tailscale address only (`tailscale ip -4` prints it, e.g. `100.x.y.z`), replacing `--host 0.0.0.0` above with `--host 100.x.y.z`. If Windows asks, allow Python on private networks.
+2. iPhone: install the Tailscale app and connect. Either sign in to the same account as the laptop, or have the laptop owner **share just the laptop** with the tester's own Tailscale account (admin console → Machines → laptop → Share). Do not add testers to a shared lab network.
+3. In the app's server field enter `http://LAPTOP.TAILNET.ts.net:8765` (the laptop's Tailscale name, shown in the Tailscale app), then tap **Look again**. The app allows plain HTTP only for `*.ts.net` and private LAN ranges; Tailscale encrypts the connection itself.
+4. Stop the server after the test. While it runs, any device allowed by the tailnet's access rules can reach it.
+
 ## Second test: location plus draft route preview
 
 With the server running (including `--route-graph`, which is private data on the owner's computer), say or type **440** (or 416/430), then point the phone down the floor-4 hallway near 430/440. Each frame takes about 7 s on the server. Once two frames agree, the status shows **Possible location — unverified**, and an orange **DRAFT ROUTE PREVIEW · UNVERIFIED MAP · NOT GUIDANCE** panel appears with the existing arrow and distance. The green line is drawn on the floor in the small camera view.
