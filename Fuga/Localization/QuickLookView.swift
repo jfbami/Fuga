@@ -9,11 +9,16 @@ struct QuickLookView: View {
     var feedbackRunning = false
     var feedbackStep = ""
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.scenePhase) private var scenePhase
     @StateObject private var model = QuickLookModel()
     @StateObject private var voice = DestinationVoice()
     @State private var floor = 4
     @State private var destination = ""
     @AppStorage("mghDevelopmentServer") private var endpoint = ""
+
+    private func look() {
+        model.autoLocate(session: session, floor: floor, destination: destination, endpoint: endpoint)
+    }
 
     var body: some View {
         NavigationStack {
@@ -24,7 +29,7 @@ struct QuickLookView: View {
                         .accessibilityLabel("Live hallway camera")
                 }
                 Section {
-                    Text("Point the camera down the hallway. You don't need to select your starting room.")
+                    Text("Just hold the phone up toward the hallway. It finds where you are on its own.")
                     Picker("I'm on floor", selection: $floor) {
                         ForEach([2, 3, 4], id: \.self) { Text("Floor \($0)").tag($0) }
                     }.pickerStyle(.segmented)
@@ -42,21 +47,14 @@ struct QuickLookView: View {
                         Text("Requested destination: room \(room)").font(.headline)
                     }
                 }
-                .disabled(model.busy)
 
                 Section {
                     LabeledContent("Starting location", value: model.locationState.rawValue)
-                    if floor != 4 {
-                        Text("Floor \(floor) can be captured for testing. Recognition maps for this floor are still being prepared.")
-                    }
-                    Button("Find where I am") {
-                        onCameraWork()
-                        voice.stop()
-                        model.find(session: session, floor: floor, destination: destination, endpoint: endpoint)
-                    }
-                    .disabled(model.busy)
                     if model.busy { ProgressView() }
                     Text(model.message).accessibilityLabel(model.message)
+                    if !model.busy && floor == 4 {
+                        Button("Look again") { look() }
+                    }
                 }
                 if let feedbackAction {
                     Section {
@@ -64,7 +62,7 @@ struct QuickLookView: View {
                             Label(feedbackRunning ? "Stop test" : "Test voice & vibration",
                                   systemImage: feedbackRunning ? "stop.fill" : "waveform")
                         }
-                        .disabled(model.busy || voice.listening)
+                        .disabled(voice.listening)
                         if !feedbackStep.isEmpty { Text(feedbackStep) }
                         Text("Plays sample feedback. It does not mean your location has been found.")
                             .font(.footnote).foregroundStyle(.secondary)
@@ -93,8 +91,12 @@ struct QuickLookView: View {
             .onChange(of: voice.transcript) { _, text in
                 if let room = DestinationVoice.room(in: text) { destination = room }
             }
-            .onChange(of: floor) { _, _ in model.cancel() }
-            .onChange(of: destination) { _, _ in if model.busy { model.cancel() } }
+            // Looking starts by itself; the floor is search context, the destination is independent.
+            .onAppear { look() }
+            .onChange(of: floor) { _, _ in look() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { look() } else { model.cancel(); voice.stop() }
+            }
             .onDisappear { model.cancel(); voice.stop() }
         }
     }

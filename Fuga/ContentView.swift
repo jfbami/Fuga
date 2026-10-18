@@ -3,7 +3,7 @@ import SwiftUI
 /// Screens over the live camera:
 /// 1. Start: find the starting location from the camera; destination input is independent.
 /// 2. Guidance: Find My–style arrow, distance, next instruction, spoken turns and vibration.
-///    Find where I am requests a fresh camera check. Optional ElevenLabs direction
+///    Find where I am looks again from the camera. Optional ElevenLabs direction
 ///    cues and off-course nudges (pulses when you face well away from the route).
 struct ContentView: View {
     @StateObject private var nav: RouteNavigator
