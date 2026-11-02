@@ -1,6 +1,12 @@
 
 [View our DubHacks 2026 submission on Devpost](https://devpost.com/software/juno-s4y19m)
 
+## Demo
+
+Watch our DubHacks 2026 pitch and demo.
+
+https://github.com/user-attachments/assets/b75e3aec-a550-4b0f-b269-6a6d5ef7a89c
+
 ## Overview
 
 Fuga combines LiDAR-based 3D reconstruction with a pretrained transformer-based matcher to estimate a phone camera’s position and orientation inside a building. 
