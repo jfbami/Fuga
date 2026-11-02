@@ -6,7 +6,7 @@
 
 ## Overview
 
-Fuga combines LiDAR-based 3D reconstruction with a pretrained transformer-based matcher to estimate a phone camera’s position and orientation inside a building. Built at DubHacks 2026, it explores indoor wayfinding for students and visitors in Mary Gates Hall.
+Fuga combines LiDAR-based 3D reconstruction with a pretrained transformer-based matcher to estimate a phone camera’s position and orientation inside a building. Built at DubHacks 2026, it explores indoor wayfinding for students and visitors at UW
 
 The reconstruction pipeline uses **Open3D’s volumetric TSDF fusion** to combine iPhone LiDAR scans into 3D hallway models. The localization pipeline uses **DISK**, a convolutional neural network, to extract visual features and **LightGlue**, a transformer-based matcher, to match those features against depth-backed reference views. **OpenCV’s PnP/RANSAC solver** then estimates the camera’s position and orientation.
 
